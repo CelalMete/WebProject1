@@ -38,23 +38,15 @@ async function verifyPayment(txid, method, expectedAmount) {
     try {
         const myAddress = config[`${method}Address`];
         let receivedAmount = 0;
-
-        // --- 1. YOL: USDT (TRC20 - TRON AĞI) KONTROLÜ ---
         if (method === 'usdt') {
             const response = await axios.get(`https://apilist.tronscanapi.com/api/transaction-info?hash=${txid}`);
             const tx = response.data;
-
-            // İşlem Tron ağında yoksa
             if (Object.keys(tx).length === 0 || !tx.hash) {
                  return { success: false, message: "Böyle bir işlem (TXID) bulunamadı." };
             }
-
-            // Onay ve Başarı kontrolü (Tron ağı 'SUCCESS' döner)
             if (tx.contractRet !== "SUCCESS" || !tx.confirmed) {
                 return { success: false, message: "İşlem henüz onay almadı veya başarısız. Lütfen bekleyip tekrar deneyin." };
             }
-
-            // İşlem içindeki token transferlerini bul
             if (!tx.trc20TransferInfo) {
                  return { success: false, message: "Bu işlemde USDT transferi bulunamadı." };
             }
@@ -262,9 +254,7 @@ app.post('/submit-payment', validateTxid, async (req, res) => {
             method,
             status: 'completed'
         });
-        
-        // Müşteri satın alımı tamamladığında Frontend'deki sepeti temizlemesi için uyarı
-        res.send(`
+         res.send(`
             <script>localStorage.removeItem('alone_cart');</script>
             Ödemen alındı! Toplam ${orderItems.length} kalem ürün bilgileri ${email} adresine gönderilecek.
         `);
