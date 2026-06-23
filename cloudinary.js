@@ -11,31 +11,33 @@ cloudinary.config({
 const KategoriStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: 'kategoriler',
+    folder: 'webproject1/kategoriler', 
     allowed_formats: ['jpg', 'png', 'webp'],
-    public_id: (req, file) => `kat_${Date.now()}` // Basit bir ID
+    public_id: (req, file) => `kat_${Date.now()}` 
   }
 });
-
-// 2. Cheat Storage (Hem kapak hem galeri için)
 const CheatStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req, file) => {
-    // Cheat başlığına göre klasör ismi
-    const cheatName = req.body.name ? req.body.name.toLowerCase().replace(/\s+/g, '-') : 'genel';
+    const cheatName = req.body.name 
+      ? req.body.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') 
+      : 'genel';
+    
+    const temizDosyaAdi = file.originalname.split('.')[0].replace(/[^a-zA-Z0-9]+/g, '_');
+
     return {
-      folder: `cheats/${cheatName}`,
+      folder: `webproject1/cheats/${cheatName}`, 
       allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
-      public_id: `${Date.now()}_${file.originalname.split('.')[0]}`
+      public_id: `${Date.now()}_${temizDosyaAdi}`
     };
   }
 });
 
-// Upload Middleware'leri
 const KategoriUpload = multer({ storage: KategoriStorage }).single('coverImage');
+
 const CheatUpload = multer({ storage: CheatStorage }).fields([
   { name: 'coverImage', maxCount: 1 }, 
   { name: 'otherImages', maxCount: 5 }
 ]);
 
-module.exports = {KategoriUpload,CheatUpload};
+module.exports = { KategoriUpload, CheatUpload };

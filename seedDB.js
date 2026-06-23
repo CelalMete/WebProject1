@@ -3,23 +3,10 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 const axios = require('axios');
+const Game = require("./public/models/cheatmodel");
 
-// Saat Şeması
-const watchSchema = new mongoose.Schema({
-    brand: { type: String, required: true },
-    referenceNumber: { type: String, required: true, unique: true },
-    caliber: String,
-    caseMaterial: String,
-    imageUrl: String
-});
-
-// Saati modele compile etmece
-const Watch = mongoose.model('Watch', watchSchema);
-
-// Seeding Mantığı
 async function seedDatabase() {
     try {
-        // MongoDB cluster baglantisi
         console.log('Connecting to Database...');
         await mongoose.connect(process.env.MONGO_URI);
         console.log('Connected.');
@@ -64,5 +51,4 @@ async function seedDatabase() {
     }
 }
 
-// Fonksiyonu çalıştır
 seedDatabase();
