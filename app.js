@@ -130,7 +130,7 @@ app.get('/uploadcheat',async(req,res)=>{
 })
 app.get('/category/:id',async(req,res)=>{
    let id=req.params.id;
-   const cheats= await Watch.find( {categoryId:id})
+   const cheats= await Watch.find( {brand:id})
    res.render('main',{
       cheats,
       content:'game',
@@ -139,9 +139,10 @@ app.get('/category/:id',async(req,res)=>{
 })
 app.get('/cheats/:id',async(req,res)=>{
    const cheatinfo= await Watch.findById(req.params.id)
+   const brand = await category.findById(cheatinfo.brand)
    res.render('main',{
       cheat:cheatinfo,
-      content:'cheat',
+      content:'cheat',brand,
       style:'store.css'
    })
 })
@@ -271,11 +272,15 @@ app.post('/add-cheat2', CheatUpload, async (req, res) => {
             ? req.files['otherImages'].map(f => f.path) 
             : [];
 
-        const newCheat = new cheat({
-            CheatName:req.body.name,
-            Photo: coverUrl,      
+        const newWatch = new Watch({
+            name:req.body.name,
+            imageUrl: coverUrl,
+            caliber:req.body.caliber,
+            caseMaterial:req.body.caseMaterial,
+            referenceNumber:req.body.referenceNumber,     
+            aciklama:req.body.aciklama,
             Photos: galleryUrls,  
-          categoryId: req.body.categoryId
+            brand: req.body.categoryId
         });
 
         await newWatch.save();
