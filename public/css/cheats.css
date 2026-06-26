@@ -4,7 +4,7 @@ h3 { font-size: 15px; }
 .minibaslik { margin-top: 1rem; }
 
 .infos { padding: 1rem; }
-#price { font-size: 30px; font-weight: 700; }
+#price { font-size: 20px; font-weight: 500; font-family: serif;margin-top: 1rem; }
 
 .contNumb { 
     display: grid; 
@@ -49,7 +49,8 @@ h3 { font-size: 15px; }
 .foreground-img {z-index: 2; border-right: 2px solid white; }
 .compare-input { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; z-index: 10; cursor: col-resize; }
 .slider-line { position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: white; z-index: 5; }
-
+.infoaciklamas{ margin-top: 2rem;}
+.aciklama{padding: 1rem; box-sizing: border-box;}
 .thumb-gallery { display: flex; gap: 10px; margin-top: 15px; justify-content: center; }
 .thumb { width: 80px; height: 50px; object-fit: cover; border-radius: 5px; opacity: 0.5; cursor: pointer; transition: 0.3s; }
 .thumb.active { opacity: 1; border: 2px solid #3b82f6; }

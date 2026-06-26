@@ -14,7 +14,7 @@ app.set('public', path.join(__dirname, 'public'));//important2
 app.use(express.urlencoded({ extended: true }));
 const { KategoriUpload,CheatUpload} = require('./cloudinary')
 const category = require('./public/models/category')
-const cheat = require('./public/models/cheatmodel');
+const Watch= require('./public/models/Watchmodel');
 const user = require('./public/models/usermodel');
 const Order = require('./public/models/ordermodel');
 const dbURL = process.env.MONGO_URI;
@@ -130,7 +130,7 @@ app.get('/uploadcheat',async(req,res)=>{
 })
 app.get('/category/:id',async(req,res)=>{
    let id=req.params.id;
-   const cheats= await cheat.find( {categoryId:id})
+   const cheats= await Watch.find( {brand:id})
    res.render('main',{
       cheats,
       content:'game',
@@ -138,10 +138,11 @@ app.get('/category/:id',async(req,res)=>{
    })
 })
 app.get('/cheats/:id',async(req,res)=>{
-   const cheatinfo= await cheat.findById(req.params.id)
+   const cheatinfo= await Watch.findById(req.params.id)
+   const brand = await category.findById(cheatinfo.brand)
    res.render('main',{
       cheat:cheatinfo,
-      content:'cheat',
+      content:'cheat',brand,
       style:'store.css'
    })
 })
@@ -162,7 +163,7 @@ app.get('/checkout', async (req, res) => {
 
         // Sepetteki her bir ürünü DB'den bul ve fiyatını hesapla
         for (let item of cartArray) {
-            const product = await cheat.findById(item.id);
+            const product = await Watch.findById(item.id);
             if (!product) continue;
             
             const selectedPackage = product.Price.find(p => p.PriceTitle === item.title);
@@ -210,7 +211,7 @@ app.post('/submit-payment', validateTxid, async (req, res) => {
 
         // Güvenlik: Toplam fiyatı yine DB'den hesaplıyoruz!
         for (let item of cartArray) {
-            const product = await cheat.findById(item.id);
+            const product = await Watch.findById(item.id);
             if (!product) continue;
             const selectedPackage = product.Price.find(p => p.PriceTitle === item.title);
             if (selectedPackage) {
@@ -271,14 +272,18 @@ app.post('/add-cheat2', CheatUpload, async (req, res) => {
             ? req.files['otherImages'].map(f => f.path) 
             : [];
 
-        const newCheat = new cheat({
-            CheatName:req.body.name,
-            Photo: coverUrl,      
+        const newWatch = new Watch({
+            name:req.body.name,
+            imageUrl: coverUrl,
+            caliber:req.body.caliber,
+            caseMaterial:req.body.caseMaterial,
+            referenceNumber:req.body.referenceNumber,     
+            aciklama:req.body.aciklama,
             Photos: galleryUrls,  
-          categoryId: req.body.categoryId
+            brand: req.body.categoryId
         });
 
-        await newCheat.save();
+        await newWatch.save();
         res.redirect('/');
     } catch (err) {
         res.status(500).send("Hata: " + err.message);
@@ -302,7 +307,7 @@ app.post('/add-cheat', KategoriUpload, async (req, res) => {
 });
 app.post('/cheats/add-price/:id', async (req, res) => {
     const { PriceTitle, Stock, Price } = req.body;
-    await cheat.findByIdAndUpdate(req.params.id, {
+    await Watch.findByIdAndUpdate(req.params.id, {
         $push: { Price: { PriceTitle, Stock, Price } }
     });
     res.redirect(`/cheats/${req.params.id}`);
@@ -313,14 +318,14 @@ app.post('/cheats/add-info/:id', async (req, res) => {
     const { blockTitle,subTitle, items, } = req.body;
     const itemsArray = items.split(',').map(item => item.trim());
     
-    await cheat.findByIdAndUpdate(req.params.id, {
+    await Watch.findByIdAndUpdate(req.params.id, {
         $push: { infoBlocks: { blockTitle,subTitle, items: itemsArray } }
     });
     res.redirect(`/cheats/${req.params.id}`);
 });
 app.get('/search', async (req, res) => {
     const query = req.query.q; 
-    const results = await cheat.find({ 
+    const results = await Watch.find({ 
         CheatName: { $regex: query, $options: 'i' } 
     });
     
