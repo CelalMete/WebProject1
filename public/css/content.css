@@ -1,4 +1,16 @@
 :root {
+    /* Arka Planlar */
+    --bg-nav-top: #000000;     /* Kontrast için full siyah */
+    --bg-main: #0A0A0A;        /* main siyah */
+    --bg-panel: #141414;       /* card ve box için gri */
+    
+    /* Kenarlar */
+    --border-standard: #262626; 
+    
+    /* Yazı */
+    --text-primary: #FFFFFF;   /* Ana Yazı */
+    --text-muted: #888888;     /* ikincil info */
+     
   --theme-primary: 59 130 246; 
   --theme-secondary: 30 41 59;
   --theme-bg: 18 18 18;
@@ -13,6 +25,6 @@
 }
 .spacebetween{display: flex;flex-direction: row;justify-content:space-between;}
 .gap1{display: flex;flex-direction: row;justify-content:space-between;}
-.box{ border: 1px solid rgb(45 45 50);border-radius: .5rem;box-sizing: border-box;width: 100%;color: rgb(255,255,255,1);
-   margin-bottom: 1.5rem;background-color: rgb(24 25 30);text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+.box{ border: 1px solid var(--border-standard);border-radius: .5rem;box-sizing: border-box;width: 100%;color: var(--text-primary);
+   margin-bottom: 1.5rem;background-color: var(--bg-panel);text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
    box-shadow:  0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05),inset 0 1px 0 rgba(255, 255, 255, 0.03);}

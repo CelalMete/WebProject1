@@ -2,29 +2,16 @@
 <div class="homeCont">
    <div class="homeHeader box">
       <div class="hhtext">Home</div>
-      <div class="hhtext"><i class="fa-solid fa-table-cells blue"></i>All Activity</div>
+      <div class="hhtext"><i class="fa-solid fa-table-cells"></i>All Activity</div>
    </div>
    <div class="storeCont">
       <div class="storeLeft">
+        
+
          <div class="box">
-            <div class="joinDc">
-               <div class="instaDelivery">
-                  <svg viewBox="0 0 24 24" class="my-custom-icon" fill="currentColor" >
-                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" 
-                        stroke-width="2" stroke="currentColor" 
-                        fill="none" stroke-linecap="round" stroke-linejoin="round">
-                  </path>
-                  </svg>    
-                  <div class="dctxt">
-                     <h2>Instant Delivery With Credit Card & Crypto!</h2>
-                     <p>To use Cashapp, Venmo, or Zelle join our discord and create a ticket.</p>
-                  </div>           
-               </div>
-               <button class="dc">Join Discord</button>
-            </div>
-         </div>
+
          <div class="box products">
-            <h3>All Products</h3>
+            <h3>Most Popular</h3>
             <div class="products-grid gap3">
                <% games.forEach(gm=>{ %>
                <a href="/category/<%= gm._id %>"><img class="br5" src="<%= gm.GameIcon %>" alt=""></a>
@@ -80,35 +67,24 @@
       </div>
       <div class="storeRight ">
          <div class="Categories box">
-            <h3 style="font-size: 14px;">Categories</h3>
+            <h3 style="font-size: 14px;">All Brands</h3>
             <ul>
-               <li class="li"><a href=""><span></span> Rainbow Six Siege</a></li>
-               <li class="li"><a href=""><span></span>Valorant</a></li>
-               <li class="li"><a href=""><span></span>Apex Legends</a></li>
-               <li class="li"><a href=""><span></span>HWID Spoofer</a></li>
-               <li class="li"><a href=""><span></span>Rust</a></li>
-               <li class="li"><a href=""><span></span>Fortnite</a></li>
-               <li class="li"><a href=""><span></span>Call Of Duty</a></li>
-               <li class="li"><a href=""><span></span>Arc Raiders</a></li>
+               <li class="li"><a href=""><span></span>Rolex</a></li>
+               <li class="li"><a href=""><span></span>Patek Philipe</a></li>
+               <li class="li"><a href=""><span></span>Audemars Piguet</a></li>
+               <li class="li"><a href=""><span></span>Vacheron Constantin</a></li>
+               <li class="li"><a href=""><span></span>Seiko</a></li>
+               <li class="li"><a href=""><span></span>A. Lange & Söhne</a></li>
+               <li class="li"><a href=""><span></span>Cartier</a></li>
+               <li class="li"><a href=""><span></span>FP Journe</a></li>
             </ul>
             
          </div>
-         <div class="box Categories">
-            <h3 style="font-size: 14px;">Who's Online</h3> 
-            <span>metrix,</span>
-            <span>InumakiTV,</span>
-            <span>554321.tre,</span>
-            <span>911,</span>
-            <span>DrStoneee,</span>
-            <span>Ludufy,</span>
-            <span>Sofradillo3,</span>
-            <span>littlebigplanet8000,</span>
-            <span>gk101</span>
-      </div>
+       
       <div class="box Categories">
-         <h3 style="font-size: 14px;">Member Statistics</h3> 
-         <div class="stats">Total Members <div class="sayi">7.508</div></div>
-         <div class="stats">Most Online  <div class="sayi">168</div></div>
+         
+         <div class="stats">Total Watch Count<div class="sayi">7.508</div></div>
+
       </div>
    </div>
 </div>
