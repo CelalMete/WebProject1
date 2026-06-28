@@ -6,6 +6,7 @@ const path = require('path');//same
 const fs = require('fs');//probably same
 const app = express();
 const config = require('./config')
+const https = require('https');
 
 app.use(express.static(path.join(__dirname, 'public')));//important
 app.use(express.json());
@@ -106,14 +107,69 @@ async function verifyPayment(txid, method, expectedAmount) {
     }
 }
 
-app.get('/',async(req,res)=>{
-  const games =await category.find()
-   res.render('main',{
-      games,
-      content:'home',
-      style:'store.css'
-   })
-})
+app.get('/', async (req, res) => {
+    console.log("--> [ROUTE HIT]: Executing root GET request");
+    try {
+        const options = {
+            method: 'GET',
+            url: 'https://watch-database1.p.rapidapi.com/watches/make/137/page/1/limit/20',
+            headers: {
+                'x-rapidapi-key': process.env.RAPIDAPI_KEY, 
+                'x-rapidapi-host': 'watch-database1.p.rapidapi.com'
+            }
+        };
+
+        console.log("--> [API REQUEST]: Fetching payload from RapidAPI...");
+        const response = await axios.request(options);
+        
+        const watchesArray = response.data.watches || [];
+        console.log(`--> [API SUCCESS]: Payload received. Ingested ${watchesArray.length} watches.`);
+
+        res.render('main', {
+            watches: watchesArray,
+            content: 'home',
+            style: 'content.css'
+        });
+
+    } catch (error) {
+        // This will print the exact reason the API rejected your request
+        console.error("--> [FATAL API ERROR]:", error.response ? error.response.data : error.message);
+        
+        // Force the render to prevent a black screen
+        res.render('main', {
+            watches: [], 
+            content: 'home',
+            style: 'content.css'
+        });
+    }
+});
+
+// API'in SSL Sertifikasıyla uğraşmaca, unsafe agent
+const unsafeAgent = new https.Agent({ rejectUnauthorized: false });
+
+app.get('/proxy-watch-image', async (req, res) => {
+    const { watchId, imageName } = req.query;
+    
+    if (!watchId || !imageName) {
+        return res.status(400).send('Missing parameters');
+    }
+
+    const targetUrl = `https://api-watches-v2.makingdatameaningful.com/files/watches/${watchId}/watch/${imageName}`;
+
+    try {
+        const response = await axios.get(targetUrl, {
+            responseType: 'arraybuffer',
+            httpsAgent: unsafeAgent // ERR_CERT_AUTHORITY_INVALID için
+        });
+
+        res.set('Content-Type', response.headers['content-type'] || 'image/jpeg');
+        res.send(response.data);
+    } catch (error) {
+        console.error(`--> [PROXY FAILURE]: Failed to fetch image for ID ${watchId}`);
+        res.redirect('https://placehold.co/400x600/141414/888888?text=Image+Not+Found');
+    }
+});
+
 app.get('/uploadcheat2', async (req, res) => {
     const games = await category.find(); // Kategori listesini çek
     res.render('main', {
