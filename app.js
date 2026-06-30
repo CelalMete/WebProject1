@@ -118,90 +118,82 @@ async function verifyPayment(txid, method, expectedAmount) {
     }
 }
 
-app.get('/', async (req, res) => {
+app.get('/', async (req, res) => { //20. defa bastan yaziyoruz, bu sefer sort by mantigi calismadi
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = 20;
-        const skip = (page - 1) * limit;
 
-        // 1. mongodb query objesi
-        let queryCondition = { watchId: { $exists: true, $ne: null } };
-        let andFilters = [];
+        let watchesData = await Watch.find({ watchId: { $exists: true, $ne: null } }).lean();
 
-        // Arama
+        const uniqueBrands = [...new Set(watchesData.map(w => w.makeName))].filter(Boolean).sort();
+
         if (req.query.q && req.query.q.trim() !== '') {
-            const searchRegex = new RegExp(req.query.q.trim(), 'i');
-            andFilters.push({
-                $or: [
-                    { makeName: searchRegex },
-                    { modelName: searchRegex },
-                    { familyName: searchRegex },
-                    { reference: searchRegex }
-                ]
+            const q = req.query.q.toLowerCase();
+            watchesData = watchesData.filter(w => 
+                (w.makeName && w.makeName.toLowerCase().includes(q)) ||
+                (w.modelName && w.modelName.toLowerCase().includes(q)) ||
+                (w.familyName && w.familyName.toLowerCase().includes(q)) ||
+                (w.reference && w.reference.toLowerCase().includes(q))
+            );
+        }
+
+        if (req.query.brand && req.query.brand !== 'all') {
+            const targetBrand = req.query.brand.toLowerCase();
+            watchesData = watchesData.filter(w => w.makeName && w.makeName.toLowerCase() === targetBrand);
+        }
+
+        if (req.query.maxPrice) {
+            const maxPriceNum = parseInt(req.query.maxPrice);
+            if (!isNaN(maxPriceNum)) {
+                watchesData = watchesData.filter(w => {
+                    if (!w.priceInEuro || w.priceInEuro === 'POA') return false;
+                    //Sayisal olmayan karakter silmece
+                    const cleanPrice = parseInt(w.priceInEuro.replace(/\D/g, ''));
+                    return !isNaN(cleanPrice) && cleanPrice <= maxPriceNum;
+                });
+            }
+        }
+
+        const activeSort = req.query.sort || 'default';
+        if (activeSort === 'price_asc' || activeSort === 'price_desc') {
+
+            watchesData = watchesData.filter(w => w.priceInEuro && w.priceInEuro !== 'POA');
+
+            watchesData.sort((a, b) => {
+                const priceA = parseInt(a.priceInEuro.replace(/\D/g, ''));
+                const priceB = parseInt(b.priceInEuro.replace(/\D/g, ''));
+                
+                const finalA = isNaN(priceA) ? 0 : priceA;
+                const finalB = isNaN(priceB) ? 0 : priceB;
+
+                return activeSort === 'price_asc' ? finalA - finalB : finalB - finalA;
             });
         }
 
-        // Marka filtresi
-        if (req.query.brand && req.query.brand !== 'all') {
-            andFilters.push({ makeName: new RegExp(`^${req.query.brand}$`, 'i') });
-        }
-
-        // Fiyat filtresi (Artik POA'lari almiyor)
-if (req.query.maxPrice) {
-    const maxPriceNum = parseInt(req.query.maxPrice);
-    if (!isNaN(maxPriceNum)) {
-        andFilters.push({
-            $and: [
-                { priceInEuro: { $ne: "POA" } },
-                {
-                    $expr: {
-                        $lte: [
-                            { $convert: { input: "$priceInEuro", to: "int", onError: 9999999, onNull: 9999999 } },
-                            maxPriceNum
-                        ]
-                    }
-                }
-            ]
-        });
-    }
-}
-
-        if (andFilters.length > 0) {
-            queryCondition = { $and: [{ watchId: { $exists: true, $ne: null } }, ...andFilters] };
-        }
-
-        const [totalRecords, watchesData, uniqueBrands] = await Promise.all([
-            Watch.countDocuments(queryCondition),
-            Watch.find(queryCondition).skip(skip).limit(limit),
-            Watch.distinct("makeName", { watchId: { $exists: true, $ne: null } })
-        ]);
-
+        const totalRecords = watchesData.length;
         const totalPages = Math.ceil(totalRecords / limit) || 1;
+        const skip = (page - 1) * limit;
+        const paginatedWatches = watchesData.slice(skip, skip + limit);
 
         res.render('main', {
-            watches: watchesData,
+            watches: paginatedWatches,
             uniqueBrands: uniqueBrands,
             currentPage: page,
             totalPages: totalPages,
             searchQuery: req.query.q || '',
             selectedBrand: req.query.brand || 'all',
             selectedMaxPrice: req.query.maxPrice || '',
+            selectedSort: activeSort,
             content: 'home',
             style: 'content.css'
         });
 
     } catch (error) {
-        console.error("--> [FILTER ENGINE FAILURE]:", error.message);
+        console.error("--> [FATAL ENGINE FAILURE]:", error.message);
         res.render('main', {
-            watches: [], 
-            uniqueBrands: [],
-            currentPage: 1,
-            totalPages: 1,
-            searchQuery: '',
-            selectedBrand: 'all',
-            selectedMaxPrice: '',
-            content: 'home',
-            style: 'content.css'
+            watches: [], uniqueBrands: [], currentPage: 1, totalPages: 1,
+            searchQuery: '', selectedBrand: 'all', selectedMaxPrice: '', selectedSort: 'default',
+            content: 'home', style: 'content.css'
         });
     }
 });

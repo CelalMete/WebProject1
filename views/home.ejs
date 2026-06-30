@@ -1,5 +1,40 @@
-<div class="storeCont">
-    <div class="storeLeft" style="flex: 1;">
+<style>
+    /* Absolute Layout Overrides */
+    .storeCont-locked {
+        display: flex !important;
+        flex-direction: row !important;
+        gap: 2rem !important;
+        align-items: flex-start !important;
+        flex-wrap: nowrap !important;
+        width: 100% !important;
+    }
+    .storeLeft-locked {
+        flex: 1 1 auto !important;
+        min-width: 0 !important; /* Prevents grid from blowing out viewport */
+    }
+    .storeRight-locked {
+        flex: 0 0 280px !important;
+        width: 280px !important;
+    }
+    .input-group-locked {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        height: 40px !important;
+        gap: 0.5rem !important;
+    }
+    .input-group-locked input {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+    }
+    .input-group-locked button {
+        flex: 0 0 auto !important;
+        box-sizing: border-box !important;
+    }
+</style>
+
+<div class="storeCont storeCont-locked">
+    <div class="storeLeft storeLeft-locked">
         <div class="box products">
             <h3>Global Watch Archive</h3>
             <div class="products-grid">
@@ -8,59 +43,68 @@
                     <% watches.forEach(watch => { %>
                         <div class="featured">
                             <img src="/proxy-watch-image?watchId=<%= watch.watchId %>&imageName=<%= watch.watchImageName %>" 
-                                 alt="<%= watch.makeName %> <%= watch.modelName %>" 
+                                 alt="<%= watch.makeName %>" 
                                  onerror="this.onerror=null; this.src='https://placehold.co/400x600/141414/888888?text=Image+Not+Found';">
 
                             <div class="featuredInfo">
                                 <div class="namePrice">
                                     <h4 class="name"><%= watch.makeName %> <%= watch.familyName %></h4>
                                     <div class="price greentxt">
-                                        <%= watch.priceInEuro ? '€' + watch.priceInEuro : 'POA' %>
+                                        <%= watch.priceInEuro && watch.priceInEuro !== 'POA' ? '€' + watch.priceInEuro : 'POA' %>
                                     </div>
                                 </div>
-                                
                                 <div class="subInfo">
                                     <span class="textNav"><i class="fa-solid fa-hashtag"></i> Ref: <%= watch.reference || 'Unknown' %></span>
-                                    <span class="textNav"><i class="fa-solid fa-gear"></i> <%= watch.movementName || 'Caliber unlisted' %></span>
                                 </div>
                             </div>
                         </div>
                     <% }) %>
                 <% } else { %>
-                    <p style="color: var(--text-muted); text-align: center; padding: 2rem; width: 100%;">No reference data matches your active filter selection.</p>
+                    <p style="color: var(--text-muted); text-align: center; padding: 2rem;">No reference data matches your filter.</p>
                 <% } %>
                 
-            </div> <div style="display: flex; justify-content: center; align-items: center; gap: 1.5rem; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border-standard);">
-                <% 
-                    // Helper to persist query parameters across page jumps
-                    let queryParams = `?q=${searchQuery}&brand=${selectedBrand}&maxPrice=${selectedMaxPrice}`;
-                %>
+            </div>
+
+            <div style="display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border-standard);">
+                <% let queryParams = `?q=${searchQuery}&brand=${selectedBrand}&maxPrice=${selectedMaxPrice}&sort=${selectedSort}`; %>
                 
                 <% if (currentPage > 1) { %>
-                    <a href="/<%= queryParams %>&page=<%= currentPage - 1 %>" style="color: var(--text-primary); text-decoration: none; font-weight: 600; font-size: 0.9rem;">&larr; Previous</a>
+                    <a href="/<%= queryParams %>&page=<%= currentPage - 1 %>" style="color: var(--text-primary); font-weight: 600;">&larr; Previous</a>
                 <% } else { %>
-                    <span style="color: var(--text-muted); font-weight: 600; font-size: 0.9rem; cursor: not-allowed;">&larr; Previous</span>
+                    <span style="color: var(--text-muted); font-weight: 600; cursor: not-allowed;">&larr; Previous</span>
                 <% } %>
                 
-                <span style="color: var(--text-muted); font-size: 0.9rem;">Page <span style="color: var(--text-primary); font-weight: 700;"><%= currentPage %></span> of <%= totalPages %></span>
+                <span style="color: var(--text-muted);">Page <span style="color: var(--text-primary); font-weight: 700;"><%= currentPage %></span> of <%= totalPages %></span>
                 
                 <% if (currentPage < totalPages) { %>
-                    <a href="/<%= queryParams %>&page=<%= currentPage + 1 %>" style="color: var(--text-primary); text-decoration: none; font-weight: 600; font-size: 0.9rem;">Next &rarr;</a>
+                    <a href="/<%= queryParams %>&page=<%= currentPage + 1 %>" style="color: var(--text-primary); font-weight: 600;">Next &rarr;</a>
                 <% } else { %>
-                    <span style="color: var(--text-muted); font-weight: 600; font-size: 0.9rem; cursor: not-allowed;">Next &rarr;</span>
+                    <span style="color: var(--text-muted); font-weight: 600; cursor: not-allowed;">Next &rarr;</span>
                 <% } %>
             </div>
             
-        </div> </div> <div class="storeRight" style="width: 280px; flex-shrink: 0;">
+        </div>
+    </div>
+
+    <div class="storeRight storeRight-locked">
         <div class="box Categories" style="padding: 1.5rem;">
-            <h3 style="margin-bottom: 1.5rem; font-size: 1.1rem; border-bottom: 1px solid var(--border-standard); padding-bottom: 0.5rem;">Parametric Filters</h3>
+            <h3 style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-standard); padding-bottom: 0.5rem;">Filters</h3>
             
             <form action="/" method="GET" id="filterForm">
                 <input type="hidden" name="q" value="<%= searchQuery %>">
 
                 <div style="margin-bottom: 1.5rem;">
-                    <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem; font-weight: 600; text-transform: uppercase;">Manufacturer</label>
-                    <select name="brand" style="width: 100%; padding: 0.6rem; background: #141414; border: 1px solid #2d2d2d; color: var(--text-primary); border-radius: 4px; outline: none;" onchange="this.form.submit()">
+                    <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem; font-weight: 600;">SORT BY</label>
+                    <select name="sort" style="width: 100%; padding: 0.6rem; background: #141414; border: 1px solid #2d2d2d; color: var(--text-primary); border-radius: 4px;" onchange="this.form.submit()">
+                        <option value="default" <%= selectedSort === 'default' ? 'selected' : '' %>>Default</option>
+                        <option value="price_asc" <%= selectedSort === 'price_asc' ? 'selected' : '' %>>Price: Low to High</option>
+                        <option value="price_desc" <%= selectedSort === 'price_desc' ? 'selected' : '' %>>Price: High to Low</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem; font-weight: 600;">MANUFACTURER</label>
+                    <select name="brand" style="width: 100%; padding: 0.6rem; background: #141414; border: 1px solid #2d2d2d; color: var(--text-primary); border-radius: 4px;" onchange="this.form.submit()">
                         <option value="all" <%= selectedBrand === 'all' ? 'selected' : '' %>>All Manufacturers</option>
                         <% uniqueBrands.forEach(brand => { %>
                             <option value="<%= brand %>" <%= selectedBrand === brand ? 'selected' : '' %>><%= brand %></option>
@@ -69,15 +113,15 @@
                 </div>
 
                 <div style="margin-bottom: 1.5rem;">
-                    <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem; font-weight: 600; text-transform: uppercase;">Max Budget (€)</label>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <input type="number" name="maxPrice" value="<%= selectedMaxPrice %>" placeholder="e.g. 20000" style="flex: 1; padding: 0.6rem; background: #141414; border: 1px solid #2d2d2d; color: var(--text-primary); border-radius: 4px; outline: none;">
+                    <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem; font-weight: 600;">MAX BUDGET (€)</label>
+                    <div class="input-group-locked">
+                        <input type="number" name="maxPrice" value="<%= selectedMaxPrice %>" placeholder="e.g. 20000" style="padding: 0 0.8rem; background: #141414; border: 1px solid #2d2d2d; color: var(--text-primary); border-radius: 4px; outline: none;">
                         <button type="submit" style="background: var(--text-primary); color: #000; border: none; padding: 0 1rem; border-radius: 4px; font-weight: 700; cursor: pointer;">Apply</button>
                     </div>
                 </div>
 
-                <% if (selectedBrand !== 'all' || selectedMaxPrice !== '' || searchQuery !== '') { %>
-                    <a href="/" style="display: block; text-align: center; font-size: 0.85rem; color: #ff4a4a; text-decoration: none; font-weight: 600; margin-top: 1rem;">Clear Active Filters</a>
+                <% if (selectedBrand !== 'all' || selectedMaxPrice !== '' || searchQuery !== '' || selectedSort !== 'default') { %>
+                    <a href="/" style="display: block; text-align: center; font-size: 0.85rem; color: #ff4a4a; text-decoration: none; font-weight: 600; margin-top: 1rem;">Clear Filters</a>
                 <% } %>
             </form>
         </div>
