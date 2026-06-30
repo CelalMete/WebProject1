@@ -14,9 +14,9 @@ async function syncCatalog() {
         await mongoose.connect(dbURL);
         console.log("Database connected successfully.");
 
-        let currentPage = 73;
-        let totalPages = 191;
-        let totalSynced = 1440;
+        let currentPage = 1;
+        let totalPages = 2;
+        let totalSynced = 20;
 
         do {
             console.log(`Fetching page ${currentPage} of ${totalPages || 'unknown'} from RapidAPI...`);
