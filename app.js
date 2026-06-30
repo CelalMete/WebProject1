@@ -120,19 +120,24 @@ async function verifyPayment(txid, method, expectedAmount) {
 
 app.get('/', async (req, res) => {
     try {
-        console.log("--> [ROUTE HIT]: Shuffling local MongoDB Atlas cache...");
+        const page = parseInt(req.query.page) || 1;
+        const limit = 20;
+        const skip = (page - 1) * limit;
 
-        // aggregation ile 20 random kayit
-        const watchesData = await Watch.aggregate([
-            { $match: { watchId: { $exists: true, $ne: null } } },
-            { $sample: { size: 20 } }
+        const queryFilter = { watchId: { $exists: true, $ne: null } };
+
+        // 2. Run the actual sequential query using skip and limit
+        const [totalRecords, watchesData] = await Promise.all([
+            Watch.countDocuments(queryFilter),
+            Watch.find(queryFilter).skip(skip).limit(limit)
         ]);
 
-        // render hatalarini duzeltmece
+        const totalPages = Math.ceil(totalRecords / limit);
+
         res.render('main', {
             watches: watchesData,
-            currentPage: 1,
-            totalPages: 72, // 1440 toplam, kayit / sayfada 20 tane 
+            currentPage: page,
+            totalPages: totalPages,
             content: 'home',
             style: 'content.css'
         });
@@ -383,7 +388,7 @@ app.post('/cheats/add-info/:id', async (req, res) => {
         $push: { infoBlocks: { blockTitle,subTitle, items: itemsArray } }
     });
     res.redirect(`/cheats/${req.params.id}`);
-});
+}); 
 app.get('/search', async (req, res) => {
     const query = req.query.q; 
     const results = await Watch.find({ 
