@@ -124,30 +124,82 @@ app.get('/', async (req, res) => {
         const limit = 20;
         const skip = (page - 1) * limit;
 
-        const queryFilter = { watchId: { $exists: true, $ne: null } };
+        // 1. mongodb query objesi
+        let queryCondition = { watchId: { $exists: true, $ne: null } };
+        let andFilters = [];
 
-        // 2. Run the actual sequential query using skip and limit
-        const [totalRecords, watchesData] = await Promise.all([
-            Watch.countDocuments(queryFilter),
-            Watch.find(queryFilter).skip(skip).limit(limit)
+        // Arama
+        if (req.query.q && req.query.q.trim() !== '') {
+            const searchRegex = new RegExp(req.query.q.trim(), 'i');
+            andFilters.push({
+                $or: [
+                    { makeName: searchRegex },
+                    { modelName: searchRegex },
+                    { familyName: searchRegex },
+                    { reference: searchRegex }
+                ]
+            });
+        }
+
+        // Marka filtresi
+        if (req.query.brand && req.query.brand !== 'all') {
+            andFilters.push({ makeName: new RegExp(`^${req.query.brand}$`, 'i') });
+        }
+
+        // Fiyat filtresi (Artik POA'lari almiyor)
+if (req.query.maxPrice) {
+    const maxPriceNum = parseInt(req.query.maxPrice);
+    if (!isNaN(maxPriceNum)) {
+        andFilters.push({
+            $and: [
+                { priceInEuro: { $ne: "POA" } },
+                {
+                    $expr: {
+                        $lte: [
+                            { $convert: { input: "$priceInEuro", to: "int", onError: 9999999, onNull: 9999999 } },
+                            maxPriceNum
+                        ]
+                    }
+                }
+            ]
+        });
+    }
+}
+
+        if (andFilters.length > 0) {
+            queryCondition = { $and: [{ watchId: { $exists: true, $ne: null } }, ...andFilters] };
+        }
+
+        const [totalRecords, watchesData, uniqueBrands] = await Promise.all([
+            Watch.countDocuments(queryCondition),
+            Watch.find(queryCondition).skip(skip).limit(limit),
+            Watch.distinct("makeName", { watchId: { $exists: true, $ne: null } })
         ]);
 
-        const totalPages = Math.ceil(totalRecords / limit);
+        const totalPages = Math.ceil(totalRecords / limit) || 1;
 
         res.render('main', {
             watches: watchesData,
+            uniqueBrands: uniqueBrands,
             currentPage: page,
             totalPages: totalPages,
+            searchQuery: req.query.q || '',
+            selectedBrand: req.query.brand || 'all',
+            selectedMaxPrice: req.query.maxPrice || '',
             content: 'home',
             style: 'content.css'
         });
 
     } catch (error) {
-        console.error("--> [FATAL DB ERROR]:", error.message);
+        console.error("--> [FILTER ENGINE FAILURE]:", error.message);
         res.render('main', {
             watches: [], 
+            uniqueBrands: [],
             currentPage: 1,
             totalPages: 1,
+            searchQuery: '',
+            selectedBrand: 'all',
+            selectedMaxPrice: '',
             content: 'home',
             style: 'content.css'
         });

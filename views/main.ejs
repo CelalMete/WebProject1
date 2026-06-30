@@ -51,10 +51,15 @@
             <div class="search-wrapper" id="searchWrapper">
                 <div class="searchCont">
                     <div class="search-top">
-                        <i class="fa-solid fa-magnifying-glass" style="color: var(--text-muted);"></i>
-                        <input type="text" name="search" id="searchBar" placeholder="Search references...">
-                        <i class="fa-solid fa-xmark close-search" id="closeSearchBtn"></i>
-                    </div>
+    <i class="fa-solid fa-magnifying-glass" style="color: var(--text-muted);"></i>
+    <form action="/" method="GET" style="flex: 1; display: flex; align-items: center;">
+        <input type="hidden" name="brand" value="<%= typeof selectedBrand !== 'undefined' ? selectedBrand : 'all' %>">
+        <input type="hidden" name="maxPrice" value="<%= typeof selectedMaxPrice !== 'undefined' ? selectedMaxPrice : '' %>">
+        
+        <input type="text" name="q" id="searchBar" value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>" placeholder="Search references..." style="width: 100%; background: transparent; border: none; color: white; outline: none; padding-left: 0.5rem;">
+    </form>
+    <i class="fa-solid fa-xmark close-search" id="closeSearchBtn" style="cursor: pointer;" onclick="window.location.href='/'"></i>
+</div>
                 </div>
             </div>
         </div>

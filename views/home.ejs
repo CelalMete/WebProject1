@@ -1,7 +1,7 @@
 <div class="storeCont">
-    <div class="storeLeft">
+    <div class="storeLeft" style="flex: 1;">
         <div class="box products">
-            <h3>ALL WATCHES</h3>
+            <h3>Global Watch Archive</h3>
             <div class="products-grid">
                 
                 <% if (typeof watches !== 'undefined' && watches.length > 0) { %>
@@ -9,7 +9,7 @@
                         <div class="featured">
                             <img src="/proxy-watch-image?watchId=<%= watch.watchId %>&imageName=<%= watch.watchImageName %>" 
                                  alt="<%= watch.makeName %> <%= watch.modelName %>" 
-                                 onerror="this.onerror=null; this.src='[https://placehold.co/400x600/141414/888888?text=Image+Not+Found](https://placehold.co/400x600/141414/888888?text=Image+Not+Found)';">
+                                 onerror="this.onerror=null; this.src='https://placehold.co/400x600/141414/888888?text=Image+Not+Found';">
 
                             <div class="featuredInfo">
                                 <div class="namePrice">
@@ -27,12 +27,17 @@
                         </div>
                     <% }) %>
                 <% } else { %>
-                    <p style="color: var(--text-muted); text-align: center; padding: 2rem;">No reference data loaded from the database.</p>
+                    <p style="color: var(--text-muted); text-align: center; padding: 2rem; width: 100%;">No reference data matches your active filter selection.</p>
                 <% } %>
                 
             </div> <div style="display: flex; justify-content: center; align-items: center; gap: 1.5rem; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border-standard);">
+                <% 
+                    // Helper to persist query parameters across page jumps
+                    let queryParams = `?q=${searchQuery}&brand=${selectedBrand}&maxPrice=${selectedMaxPrice}`;
+                %>
+                
                 <% if (currentPage > 1) { %>
-                    <a href="/?page=<%= currentPage - 1 %>" style="color: var(--text-primary); text-decoration: none; font-weight: 600; font-size: 0.9rem;">&larr; Previous</a>
+                    <a href="/<%= queryParams %>&page=<%= currentPage - 1 %>" style="color: var(--text-primary); text-decoration: none; font-weight: 600; font-size: 0.9rem;">&larr; Previous</a>
                 <% } else { %>
                     <span style="color: var(--text-muted); font-weight: 600; font-size: 0.9rem; cursor: not-allowed;">&larr; Previous</span>
                 <% } %>
@@ -40,21 +45,41 @@
                 <span style="color: var(--text-muted); font-size: 0.9rem;">Page <span style="color: var(--text-primary); font-weight: 700;"><%= currentPage %></span> of <%= totalPages %></span>
                 
                 <% if (currentPage < totalPages) { %>
-                    <a href="/?page=<%= currentPage + 1 %>" style="color: var(--text-primary); text-decoration: none; font-weight: 600; font-size: 0.9rem;">Next &rarr;</a>
+                    <a href="/<%= queryParams %>&page=<%= currentPage + 1 %>" style="color: var(--text-primary); text-decoration: none; font-weight: 600; font-size: 0.9rem;">Next &rarr;</a>
                 <% } else { %>
                     <span style="color: var(--text-muted); font-weight: 600; font-size: 0.9rem; cursor: not-allowed;">Next &rarr;</span>
                 <% } %>
             </div>
             
-        </div> </div> <div class="storeRight">
-        <div class="box Categories">
-            <h3>Market Segments</h3>
-            <ul>
-                <li class="li"><a href="#"><span></span>Rolex</a></li>
-                <li class="li"><a href="#"><span></span>Patek Philippe</a></li>
-                <li class="li"><a href="#"><span></span>Audemars Piguet</a></li>
-                <li class="li"><a href="#"><span></span>A. Lange & Söhne</a></li>
-                <li class="li"><a href="#"><span></span>Vacheron Constantin</a></li>
-            </ul>
+        </div> </div> <div class="storeRight" style="width: 280px; flex-shrink: 0;">
+        <div class="box Categories" style="padding: 1.5rem;">
+            <h3 style="margin-bottom: 1.5rem; font-size: 1.1rem; border-bottom: 1px solid var(--border-standard); padding-bottom: 0.5rem;">Parametric Filters</h3>
+            
+            <form action="/" method="GET" id="filterForm">
+                <input type="hidden" name="q" value="<%= searchQuery %>">
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem; font-weight: 600; text-transform: uppercase;">Manufacturer</label>
+                    <select name="brand" style="width: 100%; padding: 0.6rem; background: #141414; border: 1px solid #2d2d2d; color: var(--text-primary); border-radius: 4px; outline: none;" onchange="this.form.submit()">
+                        <option value="all" <%= selectedBrand === 'all' ? 'selected' : '' %>>All Manufacturers</option>
+                        <% uniqueBrands.forEach(brand => { %>
+                            <option value="<%= brand %>" <%= selectedBrand === brand ? 'selected' : '' %>><%= brand %></option>
+                        <% }) %>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem; font-weight: 600; text-transform: uppercase;">Max Budget (€)</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="number" name="maxPrice" value="<%= selectedMaxPrice %>" placeholder="e.g. 20000" style="flex: 1; padding: 0.6rem; background: #141414; border: 1px solid #2d2d2d; color: var(--text-primary); border-radius: 4px; outline: none;">
+                        <button type="submit" style="background: var(--text-primary); color: #000; border: none; padding: 0 1rem; border-radius: 4px; font-weight: 700; cursor: pointer;">Apply</button>
+                    </div>
+                </div>
+
+                <% if (selectedBrand !== 'all' || selectedMaxPrice !== '' || searchQuery !== '') { %>
+                    <a href="/" style="display: block; text-align: center; font-size: 0.85rem; color: #ff4a4a; text-decoration: none; font-weight: 600; margin-top: 1rem;">Clear Active Filters</a>
+                <% } %>
+            </form>
         </div>
     </div>
+</div>
