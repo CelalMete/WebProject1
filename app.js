@@ -23,10 +23,21 @@ const dbURL = process.env.MONGO_URI;
 console.log("-------------------------------------------------");
 console.log("🌍 SRV BAĞLANTISI DENENİYOR...");
 mongoose.connect(dbURL)
-  .then(() => console.log("Bağlantı Başarılı"))
+  .then(async () => {
+      console.log("Bağlantı Başarılı");
+      try {
+          // eski unique index constrainti sorun çıkardı 
+          await mongoose.model('Watch').collection.dropIndex('referenceNumber_1');
+          console.log("🚀 Old unique reference index dropped successfully.");
+      } catch (err) {
+          // index gittiyse görmezden gel
+          if (err.code !== 27) { 
+              console.error("Index drop failed:", err.message);
+          }
+      }
+  })
   .catch(err => console.error(err));
-//no need for database i think and i hope ( nope....)
-//code start point
+
 const validateTxid = (req, res, next) => {
     const { txid } = req.body;
     const txidRegex = /^[a-fA-F0-9]{64}$/; 
@@ -108,36 +119,30 @@ async function verifyPayment(txid, method, expectedAmount) {
 }
 
 app.get('/', async (req, res) => {
-    console.log("--> [ROUTE HIT]: Executing root GET request");
     try {
-        const options = {
-            method: 'GET',
-            url: 'https://watch-database1.p.rapidapi.com/watches/make/137/page/1/limit/20',
-            headers: {
-                'x-rapidapi-key': process.env.RAPIDAPI_KEY, 
-                'x-rapidapi-host': 'watch-database1.p.rapidapi.com'
-            }
-        };
+        console.log("--> [ROUTE HIT]: Shuffling local MongoDB Atlas cache...");
 
-        console.log("--> [API REQUEST]: Fetching payload from RapidAPI...");
-        const response = await axios.request(options);
-        
-        const watchesArray = response.data.watches || [];
-        console.log(`--> [API SUCCESS]: Payload received. Ingested ${watchesArray.length} watches.`);
+        // aggregation ile 20 random kayit
+        const watchesData = await Watch.aggregate([
+            { $match: { watchId: { $exists: true, $ne: null } } },
+            { $sample: { size: 20 } }
+        ]);
 
+        // render hatalarini duzeltmece
         res.render('main', {
-            watches: watchesArray,
+            watches: watchesData,
+            currentPage: 1,
+            totalPages: 72, // 1440 toplam, kayit / sayfada 20 tane 
             content: 'home',
             style: 'content.css'
         });
 
     } catch (error) {
-        // This will print the exact reason the API rejected your request
-        console.error("--> [FATAL API ERROR]:", error.response ? error.response.data : error.message);
-        
-        // Force the render to prevent a black screen
+        console.error("--> [FATAL DB ERROR]:", error.message);
         res.render('main', {
             watches: [], 
+            currentPage: 1,
+            totalPages: 1,
             content: 'home',
             style: 'content.css'
         });

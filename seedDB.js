@@ -1,54 +1,71 @@
-//API ingestion script 
-
+// syncDB.js
 require('dotenv').config();
 const mongoose = require('mongoose');
 const axios = require('axios');
-const Game = require("./public/models/cheatmodel");
+const Watch = require('./public/models/Watchmodel');
 
-async function seedDatabase() {
+const dbURL = process.env.MONGO_URI;
+const MAKE_ID = 137; // Rolex
+const LIMIT = 20;
+
+async function syncCatalog() {
     try {
-        console.log('Connecting to Database...');
-        await mongoose.connect(process.env.MONGO_URI);
-        console.log('Connected.');
+        console.log("Connecting to MongoDB Atlas...");
+        await mongoose.connect(dbURL);
+        console.log("Database connected successfully.");
 
-        // RapidAPI Request 
-        const options = {
-            method: 'GET',
-            url: 'YOUR_RAPIDAPI_ENDPOINT_URL',
-            headers: {
-                'X-RapidAPI-Key': process.env.RAPIDAPI_KEY,
-                'X-RapidAPI-Host': 'YOUR_RAPIDAPI_HOST'
+        let currentPage = 73;
+        let totalPages = 191;
+        let totalSynced = 1440;
+
+        do {
+            console.log(`Fetching page ${currentPage} of ${totalPages || 'unknown'} from RapidAPI...`);
+            
+            const options = {
+                method: 'GET',
+                url: `https://watch-database1.p.rapidapi.com/watches/make/${MAKE_ID}/page/${currentPage}/limit/${LIMIT}`,
+                headers: {
+                    'x-rapidapi-key': process.env.RAPIDAPI_KEY,
+                    'x-rapidapi-host': 'watch-database1.p.rapidapi.com'
+                }
+            };
+
+            const response = await axios.request(options);
+            const watches = response.data.watches || [];
+            totalPages = response.data.allPages || 1;
+
+            if (watches.length === 0) {
+                console.log("No more records found.");
+                break;
             }
-        };
 
-        console.log('Fetching data from API...');
-        const response = await axios.request(options);
-        const apiData = response.data; // JSON response'undan doğru array'ı aldığından emin ol
+            // Map data structure and build bulk write operations
+            const bulkOps = watches.map(watch => ({
+                updateOne: {
+                    filter: { watchId: watch.watchId },
+                    update: { $set: watch },
+                    upsert: true // Insert if new, update if existing
+                }
+            }));
 
-        // API'i Mongoose şemasına uydur
-        const formattedWatches = apiData.map(item => ({
-            brand: item.brand_name || 'Unknown',
-            referenceNumber: item.reference || 'N/A',
-            caliber: item.movement || 'N/A',
-            caseMaterial: item.case_material || 'N/A',
-            imageUrl: item.image_url || ''
-        }));
+            await Watch.bulkWrite(bulkOps);
+            totalSynced += watches.length;
+            console.log(`Successfully processed page ${currentPage}. Total synced: ${totalSynced}`);
 
-        console.log(`Prepared ${formattedWatches.length} records. Inserting...`);
-        
-        // Opsiyonel eski veri silme
-        await Watch.deleteMany({}); 
-        
-        // Hepsini insert et
-        await Watch.insertMany(formattedWatches);
-        console.log('Database seeded successfully.');
+            currentPage++;
+            
+            // Optional: Add a small timeout to avoid hitting rapid-fire rate limits
+            await new Promise(resolve => setTimeout(resolve, 2500));
+
+        } while (currentPage <= totalPages);
+
+        console.log(`Data synchronization complete. Total records in local Atlas: ${totalSynced}`);
+        process.exit(0);
 
     } catch (error) {
-        console.error('Fatal Error during seeding:', error);
-    } finally {
-        mongoose.connection.close();
-        process.exit(0);
+        console.error("Synchronization pipeline failed:", error.message);
+        process.exit(1);
     }
 }
 
-seedDatabase();
+syncCatalog();

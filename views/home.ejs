@@ -9,7 +9,7 @@
                         <div class="featured">
                             <img src="/proxy-watch-image?watchId=<%= watch.watchId %>&imageName=<%= watch.watchImageName %>" 
                                  alt="<%= watch.makeName %> <%= watch.modelName %>" 
-                                 onerror="this.onerror=null; this.src='https://placehold.co/400x600/141414/888888?text=Image+Not+Found';">
+                                 onerror="this.onerror=null; this.src='[https://placehold.co/400x600/141414/888888?text=Image+Not+Found](https://placehold.co/400x600/141414/888888?text=Image+Not+Found)';">
 
                             <div class="featuredInfo">
                                 <div class="namePrice">
@@ -24,16 +24,29 @@
                                     <span class="textNav"><i class="fa-solid fa-gear"></i> <%= watch.movementName || 'Caliber unlisted' %></span>
                                 </div>
                             </div>
-                        </div> <% }) %>
+                        </div>
+                    <% }) %>
                 <% } else { %>
-                    <p style="color: var(--text-muted); text-align: center; padding: 2rem;">No reference data loaded from the RapidAPI node.</p>
+                    <p style="color: var(--text-muted); text-align: center; padding: 2rem;">No reference data loaded from the database.</p>
                 <% } %>
                 
+            </div> <div style="display: flex; justify-content: center; align-items: center; gap: 1.5rem; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border-standard);">
+                <% if (currentPage > 1) { %>
+                    <a href="/?page=<%= currentPage - 1 %>" style="color: var(--text-primary); text-decoration: none; font-weight: 600; font-size: 0.9rem;">&larr; Previous</a>
+                <% } else { %>
+                    <span style="color: var(--text-muted); font-weight: 600; font-size: 0.9rem; cursor: not-allowed;">&larr; Previous</span>
+                <% } %>
+                
+                <span style="color: var(--text-muted); font-size: 0.9rem;">Page <span style="color: var(--text-primary); font-weight: 700;"><%= currentPage %></span> of <%= totalPages %></span>
+                
+                <% if (currentPage < totalPages) { %>
+                    <a href="/?page=<%= currentPage + 1 %>" style="color: var(--text-primary); text-decoration: none; font-weight: 600; font-size: 0.9rem;">Next &rarr;</a>
+                <% } else { %>
+                    <span style="color: var(--text-muted); font-weight: 600; font-size: 0.9rem; cursor: not-allowed;">Next &rarr;</span>
+                <% } %>
             </div>
-        </div>
-    </div>
-
-    <div class="storeRight">
+            
+        </div> </div> <div class="storeRight">
         <div class="box Categories">
             <h3>Market Segments</h3>
             <ul>
@@ -45,4 +58,3 @@
             </ul>
         </div>
     </div>
-</div>
