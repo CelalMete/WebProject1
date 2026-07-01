@@ -1,55 +1,102 @@
-const input = document.getElementById('searchBar');
-const output = document.getElementById('searchOut');
-const sonuc = document.getElementById('sonuclar');
-const openSearchBtn = document.getElementById('openSearchBtn');
-const searchWrapper = document.getElementById('searchWrapper');
-const closeSearchBtn = document.getElementById('closeSearchBtn');
-const searchBackdrop = document.getElementById('searchBackdrop');
+function debounce(func, delay) {
+    let timer;
+    return function (...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => func.apply(this, args), delay);
+    };
+}
 
-input.addEventListener('input', async function() {
-    const q = input.value;
-    if (q.length < 1) {
-        output.style.display = 'none';
-        return; 
-    }
-    output.style.display = 'block';
+const searchBar = document.getElementById('searchBar');
+const suggestionsBox = document.getElementById('searchSuggestions');
+
+if (searchBar && suggestionsBox) {
+    searchBar.addEventListener('input', debounce(async (e) => {
+        const searchQuery = e.target.value.trim();
+        
+        // Eğer arama çubuğu boşsa kutuyu gizle ve çık
+        if (searchQuery.length < 1) {
+            suggestionsBox.innerHTML = '';
+            suggestionsBox.style.display = 'none';
+            return;
+        }
+
+        const brand = document.getElementById('filterBrand')?.value || 'all';
+        const maxPrice = document.getElementById('filterMaxPrice')?.value || '';
+        const feature = document.getElementById('filterFeature')?.value || 'all';
+        const sort = document.getElementById('filterSort')?.value || 'default';
+
+        // Kutuda fazla kalabalık olmasın diye backend'e limit=5 parametresi ekliyoruz
+        let url = `/api/search?q=${encodeURIComponent(searchQuery)}&brand=${brand}&maxPrice=${maxPrice}&feature=${feature}&sort=${sort}&limit=5`;
+
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (data.success && data.watches.length > 0) {
+                renderSuggestions(data.watches);
+            } else {
+                suggestionsBox.innerHTML = '<div style="padding:10px; color:#888; font-size:0.8rem;">Sonuç bulunamadı...</div>';
+                suggestionsBox.style.display = 'block';
+            }
+        } catch (error) {
+            console.error("Öneri getirme hatası:", error);
+        }
+    }, 200)); // Hızlı tepki vermesi için süreyi 200ms'ye çektik
+}
+
+// Minik kutunun içine 5 sonucu yerleştiren fonksiyon
+function renderSuggestions(watches) {
+    suggestionsBox.innerHTML = '';
     
-    const response = await fetch(`/search?q=${encodeURIComponent(q)}`);
-    const results = await response.json();
-    sonuc.innerHTML = '';
-    
-    results.forEach(cheat => {
-        sonuc.innerHTML += `
-            <a href='/cheats/${cheat._id}' class="cheat-item">
-             <img src='${cheat.Photo}'>
-                <h3>${cheat.CheatName}</h3>
+    watches.forEach(watch => {
+// main.js içindeki render fonksiyonunun içi
+    const imageSrc = `/proxy-watch-image?watchId=${watch.watchId}&imageName=${watch.watchImageName}`;        const brandTitle = watch.makeName || watch.brand || 'Brand';
+        const modelName = watch.modelName || watch.name || '';
+        const watchId = watch._id; // Tıklayınca detay sayfasına gitmesi için
+
+        // Buradaki href linkini kendi detay sayfa yapına göre düzenle (Örn: /watches/${watchId} veya /product/${watchId})
+        suggestionsBox.innerHTML += `
+            <a href="/watches/${watchId}" class="suggestion-item">
+                <img src="${imageSrc}" alt="watch">
+                <div class="info">
+                    <strong>${brandTitle}</strong>
+                    <span class="model">${modelName.substring(0, 45)}...</span>
+                </div>
             </a>
         `;
     });
-});
 
-document.addEventListener('click', function(event) {
-    if (!input.contains(event.target) && !output.contains(event.target)) {
-        output.style.display = 'none';
+    suggestionsBox.style.display = 'block';
+}
+
+// Kullanıcı boş bir yere tıkladığında minik kutu kapansın
+document.addEventListener('click', function(e) {
+    if (searchBar && suggestionsBox && !searchBar.contains(e.target) && !suggestionsBox.contains(e.target)) {
+        suggestionsBox.style.display = 'none';
     }
 });
 
-if (openSearchBtn) {
-    openSearchBtn.addEventListener('click', () => {
-        searchWrapper.classList.add('modal-active');
-        input.focus();
+// Arama kutusuna tekrar tıklandığında içinde veri varsa kutu yeniden açılsın
+if(searchBar) {
+    searchBar.addEventListener('focus', () => {
+        if (searchBar.value.trim().length > 0 && suggestionsBox.innerHTML !== '') {
+            suggestionsBox.style.display = 'block';
+        }
     });
 }
 
-const closeSearchModal = () => {
-    if (searchWrapper) {
-        searchWrapper.classList.remove('modal-active');
+// Temizleme fonksiyonunu da güncelleyelim
+window.clearSearch = function() {
+    if (searchBar && suggestionsBox) {
+        searchBar.value = '';
+        suggestionsBox.innerHTML = '';
+        suggestionsBox.style.display = 'none';
     }
 };
 
-if (closeSearchBtn) closeSearchBtn.addEventListener('click', closeSearchModal);
-if (searchBackdrop) searchBackdrop.addEventListener('click', closeSearchModal);
-
+// ==========================================
+// 2. SEPET VE MODAL İŞLEMLERİ
+// ==========================================
 const cartBtn = document.getElementById('cart');
 const cartOverlay = document.getElementById('cartOverlay');
 const cartDrawer = document.getElementById('cartDrawer');
@@ -69,8 +116,10 @@ function saveCart() {
 }
 
 function toggleCart() {
-    cartOverlay.classList.toggle('active');
-    cartDrawer.classList.toggle('active');
+    if(cartOverlay && cartDrawer) {
+        cartOverlay.classList.toggle('active');
+        cartDrawer.classList.toggle('active');
+    }
 }
 
 if(cartBtn) cartBtn.addEventListener('click', toggleCart);
@@ -91,52 +140,57 @@ window.addToCart = function(item) {
     saveCart();
     renderCart();
     
-    cartOverlay.classList.add('active');
-    cartDrawer.classList.add('active');
+    if(cartOverlay && cartDrawer) {
+        cartOverlay.classList.add('active');
+        cartDrawer.classList.add('active');
+    }
 };
 
 function renderCart() {
+    if(!cartCountHeader) return;
     cartCountHeader.innerText = `(${cartItems.length} Items)`;
     
     if (cartItems.length === 0) {
-        cartEmpty.style.display = 'flex';
-        cartItemsContainer.style.display = 'none';
-        cartFooter.style.display = 'none';
+        if(cartEmpty) cartEmpty.style.display = 'flex';
+        if(cartItemsContainer) cartItemsContainer.style.display = 'none';
+        if(cartFooter) cartFooter.style.display = 'none';
     } else {
-        cartEmpty.style.display = 'none';
-        cartItemsContainer.style.display = 'block';
-        cartFooter.style.display = 'block';
+        if(cartEmpty) cartEmpty.style.display = 'none';
+        if(cartItemsContainer) cartItemsContainer.style.display = 'block';
+        if(cartFooter) cartFooter.style.display = 'block';
         
-        cartItemsContainer.innerHTML = '';
-        let total = 0;
-        
-        cartItems.forEach((item, index) => {
-            total += item.price * item.qty;
-            cartItemsContainer.innerHTML += `
-                <div class="cart-item">
-                    <div class="cart-item-top">
-                        <div class="cart-item-title">${item.name}</div>
-                        <div class="cart-item-price">$${(item.price * item.qty).toFixed(2)}</div>
-                    </div>
-                    <div class="cart-item-variant">${item.variant}</div>
-                    <div class="cart-item-controls">
-                        <div class="qty-control">
-                            <button class="qty-btn" onclick="updateQty(${index}, -1)"><i class="fa-solid fa-minus"></i></button>
-                            <div class="qty-val">${item.qty}</div>
-                            <button class="qty-btn" onclick="updateQty(${index}, 1)"><i class="fa-solid fa-plus"></i></button>
+        if(cartItemsContainer) {
+            cartItemsContainer.innerHTML = '';
+            let total = 0;
+            
+            cartItems.forEach((item, index) => {
+                total += item.price * item.qty;
+                cartItemsContainer.innerHTML += `
+                    <div class="cart-item">
+                        <div class="cart-item-top">
+                            <div class="cart-item-title">${item.name}</div>
+                            <div class="cart-item-price">$${(item.price * item.qty).toFixed(2)}</div>
                         </div>
-                        <button class="remove-btn" onclick="removeItem(${index})"><i class="fa-regular fa-trash-can"></i> Remove</button>
+                        <div class="cart-item-variant">${item.variant}</div>
+                        <div class="cart-item-controls">
+                            <div class="qty-control">
+                                <button class="qty-btn" onclick="updateQty(${index}, -1)"><i class="fa-solid fa-minus"></i></button>
+                                <div class="qty-val">${item.qty}</div>
+                                <button class="qty-btn" onclick="updateQty(${index}, 1)"><i class="fa-solid fa-plus"></i></button>
+                            </div>
+                            <button class="remove-btn" onclick="removeItem(${index})"><i class="fa-regular fa-trash-can"></i> Remove</button>
+                        </div>
                     </div>
-                </div>
-            `;
-        });
-        
-        cartTotalPrice.innerText = `$${total.toFixed(2)}`;
+                `;
+            });
+            if(cartTotalPrice) cartTotalPrice.innerText = `$${total.toFixed(2)}`;
+        }
     }
 }
 
 window.updateQty = function(index, change) {
     const item = cartItems[index];
+    if(!item) return;
     const newQty = item.qty + change;
 
     if (newQty > 0) {

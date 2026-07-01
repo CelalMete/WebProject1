@@ -41,24 +41,26 @@
                 
                 <% if (typeof watches !== 'undefined' && watches.length > 0) { %>
                     <% watches.forEach(watch => { %>
-                        <div class="featured">
-                            <img src="/proxy-watch-image?watchId=<%= watch.watchId %>&imageName=<%= watch.watchImageName %>" 
-                                 alt="<%= watch.makeName %>" 
-                                 onerror="this.onerror=null; this.src='https://placehold.co/400x600/141414/888888?text=Image+Not+Found';">
+                    <a href="/watches/<%= watch.watchId || watch._id %>" class="product-link-wrapper" style="text-decoration: none; color: inherit; display: block;">
+        <div class="featured">
+            <img src="/proxy-watch-image?watchId=<%= watch.watchId %>&imageName=<%= watch.watchImageName %>" 
+                 alt="<%= watch.makeName %>" 
+                 onerror="this.onerror=null; this.src='https://placehold.co/400x600/141414/888888?text=Image+Not+Found';">
 
-                            <div class="featuredInfo">
-                                <div class="namePrice">
-                                    <h4 class="name"><%= watch.makeName %> <%= watch.familyName %></h4>
-                                    <div class="price greentxt">
-                                        <%= watch.priceInEuro && watch.priceInEuro !== 'POA' ? '€' + watch.priceInEuro : 'POA' %>
-                                    </div>
-                                </div>
-                                <div class="subInfo">
-                                    <span class="textNav"><i class="fa-solid fa-hashtag"></i> Ref: <%= watch.reference || 'Unknown' %></span>
-                                </div>
-                            </div>
-                        </div>
-                    <% }) %>
+            <div class="featuredInfo">
+                <div class="namePrice">
+                    <h4 class="name"><%= watch.makeName || watch.brand %> <%= watch.familyName || '' %></h4>
+                    <div class="price greentxt">
+                        <%= watch.priceInEuro && watch.priceInEuro !== 'POA' ? '€' + watch.priceInEuro : (watch.price ? '€' + watch.price : 'POA') %>
+                    </div>
+                </div>
+                <div class="subInfo">
+                    <span class="textNav"><i class="fa-solid fa-hashtag"></i> Ref: <%= watch.reference || watch.referenceNumber || 'Unknown' %></span>
+                </div>
+            </div>
+        </div>
+                    </a>
+                <% }) %>
                 <% } else { %>
                     <p style="color: var(--text-muted); text-align: center; padding: 2rem;">No reference data matches your filter.</p>
                 <% } %>

@@ -51,3 +51,57 @@ body { background-color: var(--bg-main); color: var(--text-primary); min-height:
 .li a { text-decoration: none; color: var(--text-muted); font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; transition: color 0.2s; }
 .li a span { width: 6px; height: 6px; background-color: var(--accent-blue); border-radius: 50%; }
 .li a:hover { color: var(--text-primary); }
+.suggestions-box {
+    position: absolute;
+    top: 110%; /* Arama çubuğunun hemen altına yapışır */
+    left: 0;
+    width: 100%;
+    background: #1a1a1a;
+    border: 1px solid #2d2d2d;
+    border-radius: 6px;
+    max-height: 280px;
+    overflow-y: auto;
+    z-index: 9999; /* Diğer kartların üstünde gözüksün diye */
+    display: none; /* Başlangıçta gizli */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+}
+
+/* Kutunun içindeki her bir satır saat önerisi */
+.suggestion-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 0.85rem;
+    border-bottom: 1px solid #252525;
+    transition: background 0.2s ease;
+    cursor: pointer;
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:hover {
+    background: #252525;
+}
+
+.suggestion-item img {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+    background: #000;
+    border-radius: 4px;
+}
+
+.suggestion-item .info {
+    display: flex;
+    flex-direction: column;
+}
+
+.suggestion-item .info .model {
+    color: #b3b3b3;
+    font-size: 0.75rem;
+}

@@ -116,6 +116,48 @@ async function verifyPayment(txid, method, expectedAmount) {
         return { success: false, message: "Doğrulama sırasında ağ hatası oluştu." };
     }
 }
+app.get('/api/search', async (req, res) => {
+    try {
+        const searchQuery = req.query.q || '';
+        let queryConditions = [];
+
+        // 1. Arama Çubuğu Filtreleri (Metin + ID)
+        if (searchQuery.trim() !== '') {
+            queryConditions.push({ modelName: { $regex: searchQuery, $options: 'i' } });
+            queryConditions.push({ name: { $regex: searchQuery, $options: 'i' } });
+            queryConditions.push({ reference: { $regex: searchQuery, $options: 'i' } });
+            queryConditions.push({ referenceNumber: { $regex: searchQuery, $options: 'i' } });
+            queryConditions.push({ makeName: { $regex: searchQuery, $options: 'i' } });
+            queryConditions.push({ brand: { $regex: searchQuery, $options: 'i' } });
+
+            // Sayı kontrolü (ID araması)
+            const isNumeric = !isNaN(searchQuery) && !isNaN(parseFloat(searchQuery));
+            if (isNumeric) {
+                queryConditions.push({ watchId: parseInt(searchQuery) });
+            }
+        }
+
+        // Ana arama filtresini oluştur
+        let finalQuery = queryConditions.length > 0 ? { $or: queryConditions } : {};
+
+        // 2. Diğer Gizli Filtreleri de Ekle (Eğer seçildiyse)
+        if (req.query.brand && req.query.brand !== 'all') {
+            finalQuery.$and = finalQuery.$and || [];
+            finalQuery.$and.push({ $or: [{ makeName: req.query.brand }, { brand: req.query.brand }] });
+        }
+        
+        // Veritabanından veriyi çek
+        const limit = 20;
+        const watchesData = await Watch.find(finalQuery).limit(limit).lean();
+
+        // Frontend'e temiz JSON formatında gönder
+        res.json({ success: true, watches: watchesData });
+
+    } catch (error) {
+        console.error("API arama hatası:", error.message);
+        res.status(500).json({ success: false, error: "Server Error" });
+    }
+});
 app.get('/', async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
@@ -242,7 +284,34 @@ app.get('/', async (req, res) => {
         });
     }
 });
+app.get('/watches/:id', async (req, res) => {
+    try {
+        const watchId = req.params.id;
+        let watch;
 
+        // Gelen ID'nin MongoDB ObjectId mi yoksa RapidAPI watchId (sayı) mi olduğunu kontrol et
+        if (!isNaN(watchId)) {
+            watch = await Watch.findOne({ watchId: parseInt(watchId) });
+        } else {
+            watch = await Watch.findById(watchId);
+        }
+
+        if (!watch) {
+            return res.status(404).send("Saat bulunamadı.");
+        }
+
+        // Ana layout şablonunu render et ve içeriğe detay sayfasını bas
+        res.render('main', {
+            content: 'watchDetail', // watchDetail.ejs dosyasını yükler
+            watch: watch,
+            style: 'content.css' // detay sayfasının özel stili
+        });
+
+    } catch (error) {
+        console.error("Detay sayfası yüklenemedi:", error.message);
+        res.status(500).send("Sunucu Hatası");
+    }
+});
 // @ts-ignore
 app.get('/saatBulucu', async (req, res) => {
     try {

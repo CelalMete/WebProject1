@@ -1,0 +1,231 @@
+<style>
+    .detail-container {
+        display: flex;
+        gap: 3rem;
+        padding: 2rem 0;
+        width: 100%;
+        color: #ffffff;
+    }
+    .detail-left {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+    .detail-right {
+        flex: 0 0 400px;
+        width: 400px;
+        position: sticky;
+        top: 20px;
+        height: fit-content;
+    }
+    .main-image-box {
+        background: #141414;
+        border: 1px solid #2d2d2d;
+        border-radius: 8px;
+        padding: 2rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .main-image-box img {
+        max-width: 100%;
+        max-height: 450px;
+        object-fit: contain;
+    }
+    .info-card {
+        background: #141414;
+        border: 1px solid #2d2d2d;
+        border-radius: 8px;
+        padding: 1.5rem;
+    }
+    .info-card h2 {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+        font-weight: 700;
+    }
+    .info-card .brand-title {
+        color: var(--text-muted, #888);
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 1px;
+        margin-bottom: 0.5rem;
+    }
+    .detail-price {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #ff4a4a;
+        margin: 1.5rem 0;
+    }
+    .specs-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+    }
+    .specs-table tr {
+        border-bottom: 1px solid #2d2d2d;
+    }
+    .specs-table tr:last-child {
+        border-bottom: none;
+    }
+    .specs-table td {
+        padding: 0.8rem 0;
+        font-size: 0.9rem;
+    }
+    .specs-table td.label {
+        color: #888;
+        width: 40%;
+        font-weight: 500;
+    }
+    .action-btn {
+        width: 100%;
+        padding: 1rem;
+        background: #ff4a4a;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background 0.2s ease;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+    }
+    .action-btn:hover {
+        background: #e03e3e;
+    }
+    .tech-blocks {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+    .block-item {
+        background: #1a1a1a;
+        padding: 1rem;
+        border-radius: 6px;
+        border: 1px solid #252525;
+    }
+    .block-item h5 {
+        color: #ff4a4a;
+        margin: 0 0 0.5rem 0;
+        font-size: 0.9rem;
+    }
+    .block-item ul {
+        margin: 0;
+        padding-left: 1.2rem;
+        color: #ccc;
+        font-size: 0.85rem;
+    }
+    @media (max-width: 900px) {
+        .detail-container { flex-direction: column; }
+        .detail-right { width: 100%; position: relative; top: 0; }
+    }
+</style>
+
+<div class="detail-container">
+    <div class="detail-left">
+        <div class="main-image-box">
+            <img src="/proxy-watch-image?watchId=<%= watch.watchId %>&imageName=<%= watch.watchImageName %>" 
+                 alt="<%= watch.modelName || watch.name %>"
+                 onerror="this.onerror=null; this.src='https://placehold.co/500x500/141414/888888?text=No+Preview';">
+        </div>
+
+        <div class="info-card">
+            <h3 style="border-bottom: 1px solid #2d2d2d; padding-bottom: 0.5rem; margin-bottom: 1rem;">Specifications</h3>
+            <table class="specs-table">
+                <tr>
+                    <td class="label">Reference</td>
+                    <td><strong><%= watch.reference || watch.referenceNumber || 'N/A' %></strong></td>
+                </tr>
+                <% if (watch.familyName) { %>
+                <tr>
+                    <td class="label">Family</td>
+                    <td><%= watch.familyName %></td>
+                </tr>
+                <% } %>
+                <% if (watch.movementName || watch.caliber) { %>
+                <tr>
+                    <td class="label">Movement / Caliber</td>
+                    <td><%= watch.movementName || watch.caliber %></td>
+                </tr>
+                <% } %>
+                <% if (watch.caseMaterial) { %>
+                <tr>
+                    <td class="label">Case Material</td>
+                    <td><%= watch.caseMaterial %></td>
+                </tr>
+                <% } %>
+                <% if (watch.yearProducedName) { %>
+                <tr>
+                    <td class="label">Year Produced</td>
+                    <td><%= watch.yearProducedName %></td>
+                </tr>
+                <% } %>
+                <% if (watch.limitedName) { %>
+                <tr>
+                    <td class="label">Limited Edition</td>
+                    <td><%= watch.limitedName %></td>
+                </tr>
+                <% } %>
+            </table>
+        </div>
+
+        <% if (watch.infoBlocks && watch.infoBlocks.length > 0) { %>
+            <div class="info-card">
+                <h3 style="margin-bottom: 1rem;">Technical Features</h3>
+                <div class="tech-blocks">
+                    <% watch.infoBlocks.forEach(block => { %>
+                        <div class="block-item">
+                            <h5><%= block.blockTitle %></h5>
+                            <% if (block.subTitle) { %><small style="color:#777; display:block; margin-bottom:4px;"><%= block.subTitle %></small><% } %>
+                            <ul>
+                                <% block.items.forEach(item => { %>
+                                    <li><%= item %></li>
+                                <% }) %>
+                            </ul>
+                        </div>
+                    <% }) %>
+                </div>
+            </div>
+        <% } %>
+    </div>
+
+    <div class="detail-right">
+        <div class="info-card">
+            <div class="brand-title"><%= watch.makeName || watch.brand %></div>
+            <h2><%= watch.modelName || watch.name || 'Universal Watch Model' %></h2>
+            
+            <div class="detail-price">
+                <%= watch.priceInEuro && watch.priceInEuro !== 'POA' ? '€' + watch.priceInEuro : (watch.price ? '€' + watch.price : 'Price on Application (POA)') %>
+            </div>
+
+            <p style="color: #aaa; font-size: 0.9rem; line-height: 1.5; margin-bottom: 2rem;">
+                <%= watch.aciklama || watch.functionName || 'No further description content available for this specific horology reference library item.' %>
+            </p>
+
+            <button class="action-btn" onclick="triggerAddToCart()">
+                <i class="fa-solid fa-cart-plus"></i> ADD TO CART
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function triggerAddToCart() {
+        // main.js dosyasındaki addToCart fonksiyonunla tam uyumlu çalışır
+        if (typeof window.addToCart === 'function') {
+            window.addToCart({
+                id: "<%= watch._id %>",
+                name: "<%= watch.makeName || watch.brand %>",
+                variant: "<%= watch.reference || watch.referenceNumber || 'Standard' %>",
+                price: parseFloat("<%= watch.priceInEuro || watch.price || 0 %>") || 0,
+                qty: 1,
+                maxStock: 5
+            });
+        } else {
+            alert("Cart engine is initializing. Please refresh the page.");
+        }
+    }
+</script>
