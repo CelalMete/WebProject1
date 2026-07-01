@@ -66,8 +66,10 @@
             </div>
 
             <div style="display: flex; justify-content: center; gap: 1.5rem; margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border-standard);">
-                <% let queryParams = `?q=${searchQuery}&brand=${selectedBrand}&maxPrice=${selectedMaxPrice}&sort=${selectedSort}`; %>
-                
+            <% 
+                let feature = typeof selectedFeature !== 'undefined' ? selectedFeature : '';
+                let queryParams = `?q=${searchQuery}&brand=${selectedBrand}&feature=${selectedFeature}&movement=${selectedMovement}&year=${selectedYear}&maxPrice=${selectedMaxPrice}&sort=${selectedSort}`;
+            %>   
                 <% if (currentPage > 1) { %>
                     <a href="/<%= queryParams %>&page=<%= currentPage - 1 %>" style="color: var(--text-primary); font-weight: 600;">&larr; Previous</a>
                 <% } else { %>
@@ -112,7 +114,36 @@
                     </select>
                 </div>
 
-                <div style="margin-bottom: 1.5rem;">
+                <details style="margin-bottom: 1rem; border-bottom: 1px solid #2d2d2d; padding-bottom: 0.5rem;" <%= selectedFeature !== 'all' || selectedMovement !== 'all' || selectedYear !== 'all' ? 'open' : '' %>>
+                    <summary style="font-size: 0.85rem; color: var(--text-primary); font-weight: 600; cursor: pointer; text-transform: uppercase; list-style: none;">
+                        Advanced Filters <i class="fa-solid fa-sliders" style="margin-left: 8px; color: var(--text-muted);"></i>
+                    </summary>
+                    
+                    <div style="padding-top: 1rem;">
+                        <select name="feature" style="width: 100%; padding: 0.6rem; background: #141414; border: 1px solid #2d2d2d; color: var(--text-primary); border-radius: 4px; margin-bottom: 1rem;" onchange="this.form.submit()">
+                            <option value="all" <%= selectedFeature === 'all' ? 'selected' : '' %>>All Complications</option>
+                            <% uniqueFeatures.forEach(feature => { %>
+                                <option value="<%= feature %>" <%= selectedFeature === feature ? 'selected' : '' %>><%= feature %></option>
+                            <% }) %>
+                        </select>
+
+                        <select name="movement" style="width: 100%; padding: 0.6rem; background: #141414; border: 1px solid #2d2d2d; color: var(--text-primary); border-radius: 4px; margin-bottom: 1rem;" onchange="this.form.submit()">
+                            <option value="all" <%= selectedMovement === 'all' ? 'selected' : '' %>>All Movements</option>
+                            <% uniqueMovements.forEach(movement => { %>
+                                <option value="<%= movement %>" <%= selectedMovement === movement ? 'selected' : '' %>><%= movement %></option>
+                            <% }) %>
+                        </select>
+
+                        <select name="year" style="width: 100%; padding: 0.6rem; background: #141414; border: 1px solid #2d2d2d; color: var(--text-primary); border-radius: 4px;" onchange="this.form.submit()">
+                            <option value="all" <%= selectedYear === 'all' ? 'selected' : '' %>>All Years</option>
+                            <% uniqueYears.forEach(year => { %>
+                                <option value="<%= year %>" <%= selectedYear === year ? 'selected' : '' %>><%= year %></option>
+                            <% }) %>
+                        </select>
+                    </div>
+                </details>
+
+                <div style="margin-bottom: 1.5rem; margin-top: 1.5rem;">
                     <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem; font-weight: 600;">MAX BUDGET (€)</label>
                     <div class="input-group-locked">
                         <input type="number" name="maxPrice" value="<%= selectedMaxPrice %>" placeholder="e.g. 20000" style="padding: 0 0.8rem; background: #141414; border: 1px solid #2d2d2d; color: var(--text-primary); border-radius: 4px; outline: none;">
@@ -120,7 +151,7 @@
                     </div>
                 </div>
 
-                <% if (selectedBrand !== 'all' || selectedMaxPrice !== '' || searchQuery !== '' || selectedSort !== 'default') { %>
+                <% if (selectedBrand !== 'all' || selectedMaxPrice !== '' || searchQuery !== '' || selectedSort !== 'default' || selectedFeature !== 'all' || selectedMovement !== 'all' || selectedYear !== 'all') { %>
                     <a href="/" style="display: block; text-align: center; font-size: 0.85rem; color: #ff4a4a; text-decoration: none; font-weight: 600; margin-top: 1rem;">Clear Filters</a>
                 <% } %>
             </form>

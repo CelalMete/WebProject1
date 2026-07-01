@@ -5,7 +5,7 @@
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <title>Alone</title>
    <link rel="stylesheet" href="/css/content.css">
-   <link rel="stylesheet" href="/css/<%= style %>">
+   <link rel="stylesheet" href="/css/<%= typeof style !== 'undefined' ? style : 'default.css' %>">
    <link rel="stylesheet" href="/css/layout.css">
    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
    <style> a { text-decoration: none; color: inherit; } </style>
@@ -26,45 +26,42 @@
          </div>
       </div>
    </div>
-   <div class="secondNav">
-      <div class="navLeft">
-    <a href="/">
-        <div class="header_nav2 active">
+   <div class="secondNav" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; width: 100%; box-sizing: border-box; border-bottom: 1px solid #2d2d2d;">
+      
+      <div class="navLeft" style="display: flex; align-items: center; gap: 2rem;">
+         <a href="/" style="color: var(--text-primary); font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 8px;">
             <div class="icon"><i class="fa-solid fa-layer-group"></i></div>
             <div class="text-sm">CATALOG</div>
-        </div>
-    </a>
-    <a href="/brands">
-        <div class="header_nav2"> 
-            <div class="icon"><i class="fa-solid fa-building"></i></div>
-            <div class="text-sm">BRANDS</div>
-        </div>
-    </a>
-    <a href="/calibers">
-        <div class="header_nav2"> 
-            <div class="icon"><i class="fa-solid fa-microchip"></i></div>
-            <div class="text-sm">MOVEMENTS</div>
-        </div>
-    </a>
+         </a>
+         
+         <a href="/saatBulucu" style="color: #ff4a4a; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 8px; border: 1px solid #ff4a4a; padding: 0.4rem 1rem; border-radius: 4px; transition: all 0.2s ease;">
+            <i class="fa-solid fa-crosshairs"></i> MATCH ENGINE
+         </a>
       </div>
 
-     <div class="navRight2">
-            <div class="search-wrapper" id="searchWrapper">
-                <div class="searchCont">
-                    <div class="search-top">
-    <i class="fa-solid fa-magnifying-glass" style="color: var(--text-muted);"></i>
-    <form action="/" method="GET" style="flex: 1; display: flex; align-items: center;">
-        <input type="hidden" name="brand" value="<%= typeof selectedBrand !== 'undefined' ? selectedBrand : 'all' %>">
-        <input type="hidden" name="maxPrice" value="<%= typeof selectedMaxPrice !== 'undefined' ? selectedMaxPrice : '' %>">
-        
-        <input type="text" name="q" id="searchBar" value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>" placeholder="Search references..." style="width: 100%; background: transparent; border: none; color: white; outline: none; padding-left: 0.5rem;">
-    </form>
-    <i class="fa-solid fa-xmark close-search" id="closeSearchBtn" style="cursor: pointer;" onclick="window.location.href='/'"></i>
-</div>
-                </div>
+      <div class="navRight2">
+         <div class="search-wrapper" id="searchWrapper">
+            <div class="searchCont" style="background: #1a1a1a; border-radius: 6px; padding: 0.4rem 0.8rem; display: flex; align-items: center;">
+               <form action="/" method="GET" style="display: flex; width: 100%; align-items: center;">
+                  <i class="fa-solid fa-magnifying-glass" style="color: var(--text-muted); margin-right: 10px;"></i>
+                  
+                  <input type="hidden" name="brand" value="<%= typeof selectedBrand !== 'undefined' ? selectedBrand : 'all' %>">
+                  <input type="hidden" name="maxPrice" value="<%= typeof selectedMaxPrice !== 'undefined' ? selectedMaxPrice : '' %>">
+                  <input type="hidden" name="feature" value="<%= typeof selectedFeature !== 'undefined' ? selectedFeature : 'all' %>">
+                  <input type="hidden" name="sort" value="<%= typeof selectedSort !== 'undefined' ? selectedSort : 'default' %>">
+                  
+                  <input type="text" name="q" id="searchBar" value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>" placeholder="Search references..." style="background: transparent; border: none; color: white; outline: none; width: 250px; font-family: inherit;">
+                  
+                  <button type="submit" style="display: none;"></button>
+               </form>
+               <i class="fa-solid fa-xmark close-search" id="closeSearchBtn" style="cursor: pointer; margin-left: 10px; color: var(--text-muted);" onclick="window.location.href='/'"></i>
             </div>
-        </div>
-    </div> <div class="content">
+         </div>
+      </div>
+
+   </div>
+   
+    <div class="content">
         <%- include(content) %>
     </div>
     

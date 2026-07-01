@@ -14,7 +14,6 @@ app.set('view engine', 'ejs');
 app.set('public', path.join(__dirname, 'public'));//important2
 app.use(express.urlencoded({ extended: true }));
 const { KategoriUpload,CheatUpload} = require('./cloudinary')
-const category = require('./public/models/category')
 const Watch= require('./public/models/Watchmodel');
 const user = require('./public/models/usermodel');
 const Order = require('./public/models/ordermodel');
@@ -117,16 +116,25 @@ async function verifyPayment(txid, method, expectedAmount) {
         return { success: false, message: "Doğrulama sırasında ağ hatası oluştu." };
     }
 }
-
-app.get('/', async (req, res) => { //20. defa bastan yaziyoruz, bu sefer sort by mantigi calismadi
+app.get('/', async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = 20;
 
+        // 1. Veri çekmece
         let watchesData = await Watch.find({ watchId: { $exists: true, $ne: null } }).lean();
-
+        
+        // Dinamik filtre listeleri
         const uniqueBrands = [...new Set(watchesData.map(w => w.makeName))].filter(Boolean).sort();
+        
+        // functionName virgülle ayrılmış string geldiği için parçalayıp temizliyoruz
+        const allFeatures = watchesData.flatMap(w => w.functionName ? w.functionName.split(',').map(f => f.trim()) : []);
+        const uniqueFeatures = [...new Set(allFeatures)].filter(Boolean).sort();
+        
+        const uniqueMovements = [...new Set(watchesData.map(w => w.movementName))].filter(Boolean).sort();
+        const uniqueYears = [...new Set(watchesData.map(w => w.yearProducedName))].filter(Boolean).sort();
 
+        // 2. Küresel Arama filtresi 
         if (req.query.q && req.query.q.trim() !== '') {
             const q = req.query.q.toLowerCase();
             watchesData = watchesData.filter(w => 
@@ -137,51 +145,75 @@ app.get('/', async (req, res) => { //20. defa bastan yaziyoruz, bu sefer sort by
             );
         }
 
+        // 3. Marka Filtresi 
         if (req.query.brand && req.query.brand !== 'all') {
             const targetBrand = req.query.brand.toLowerCase();
             watchesData = watchesData.filter(w => w.makeName && w.makeName.toLowerCase() === targetBrand);
         }
 
+        // 4. Maksimum Bütçe Filtresi
         if (req.query.maxPrice) {
             const maxPriceNum = parseInt(req.query.maxPrice);
             if (!isNaN(maxPriceNum)) {
                 watchesData = watchesData.filter(w => {
                     if (!w.priceInEuro || w.priceInEuro === 'POA') return false;
-                    //Sayisal olmayan karakter silmece
                     const cleanPrice = parseInt(w.priceInEuro.replace(/\D/g, ''));
                     return !isNaN(cleanPrice) && cleanPrice <= maxPriceNum;
                 });
             }
         }
 
+        // 5. Gelişmiş Derin Filtreler 
+        if (req.query.feature && req.query.feature !== 'all') {
+            const targetFeature = req.query.feature.toLowerCase();
+            watchesData = watchesData.filter(w => 
+                w.functionName && w.functionName.toLowerCase().includes(targetFeature)
+            );
+        }
+
+        if (req.query.movement && req.query.movement !== 'all') {
+            const targetMovement = req.query.movement.toLowerCase();
+            watchesData = watchesData.filter(w => w.movementName && w.movementName.toLowerCase() === targetMovement);
+        }
+
+        if (req.query.year && req.query.year !== 'all') {
+            const targetYear = req.query.year;
+            watchesData = watchesData.filter(w => w.yearProducedName === targetYear);
+        }
+
+        // 6. Sıralama Motoru 
         const activeSort = req.query.sort || 'default';
         if (activeSort === 'price_asc' || activeSort === 'price_desc') {
-
             watchesData = watchesData.filter(w => w.priceInEuro && w.priceInEuro !== 'POA');
-
             watchesData.sort((a, b) => {
                 const priceA = parseInt(a.priceInEuro.replace(/\D/g, ''));
                 const priceB = parseInt(b.priceInEuro.replace(/\D/g, ''));
-                
                 const finalA = isNaN(priceA) ? 0 : priceA;
                 const finalB = isNaN(priceB) ? 0 : priceB;
-
                 return activeSort === 'price_asc' ? finalA - finalB : finalB - finalA;
             });
         }
 
+        // 7. sayfalama
         const totalRecords = watchesData.length;
         const totalPages = Math.ceil(totalRecords / limit) || 1;
         const skip = (page - 1) * limit;
         const paginatedWatches = watchesData.slice(skip, skip + limit);
 
+        // 8. EJS Rendering Context
         res.render('main', {
             watches: paginatedWatches,
             uniqueBrands: uniqueBrands,
+            uniqueFeatures: uniqueFeatures,
+            uniqueMovements: uniqueMovements,
+            uniqueYears: uniqueYears,
             currentPage: page,
             totalPages: totalPages,
             searchQuery: req.query.q || '',
             selectedBrand: req.query.brand || 'all',
+            selectedFeature: req.query.feature || 'all',
+            selectedMovement: req.query.movement || 'all',
+            selectedYear: req.query.year || 'all',
             selectedMaxPrice: req.query.maxPrice || '',
             selectedSort: activeSort,
             content: 'home',
@@ -191,10 +223,92 @@ app.get('/', async (req, res) => { //20. defa bastan yaziyoruz, bu sefer sort by
     } catch (error) {
         console.error("--> [FATAL ENGINE FAILURE]:", error.message);
         res.render('main', {
-            watches: [], uniqueBrands: [], currentPage: 1, totalPages: 1,
-            searchQuery: '', selectedBrand: 'all', selectedMaxPrice: '', selectedSort: 'default',
-            content: 'home', style: 'content.css'
+            watches: [], 
+            uniqueBrands: [], 
+            uniqueFeatures: [],
+            uniqueMovements: [],
+            uniqueYears: [],
+            currentPage: 1, 
+            totalPages: 1,
+            searchQuery: '', 
+            selectedBrand: 'all', 
+            selectedFeature: 'all',
+            selectedMovement: 'all',
+            selectedYear: 'all',
+            selectedMaxPrice: '', 
+            selectedSort: 'default',
+            content: 'home', 
+            style: 'content.css'
         });
+    }
+});
+
+// @ts-ignore
+app.get('/saatBulucu', async (req, res) => {
+    try {
+        // Param yoksa direkt bos anketi firlat gec
+        if (Object.keys(req.query).length === 0) {
+            return res.render('main', { results: null, content: 'matcher', style: 'content.css' });
+        }
+
+        const { budget, environment, stage } = req.query;
+        
+        // Database'den ham datayı çekiyoruz, .lean() hız için şart
+        let watchesData = await Watch.find({ watchId: { $exists: true, $ne: null } }).lean();
+
+        // 1. Bütçe Kontrolü (Fakir eleme simülasyonu)
+        if (budget) {
+            const maxBudget = parseInt(budget);
+            watchesData = watchesData.filter(w => {
+                if (!w.priceInEuro || w.priceInEuro === 'POA') return false;
+                const cleanPrice = parseInt(w.priceInEuro.replace(/\D/g, ''));
+                return !isNaN(cleanPrice) && cleanPrice <= maxBudget;
+            });
+        }
+
+        // 2. Vibe check
+        if (environment === 'corporate') {
+            // Ağır abi tarzı (Pure Dress)
+            const corporateBrands = ['a. lange & söhne', 'vacheron constantin', 'patek philippe', 'longines'];
+            watchesData = watchesData.filter(w => 
+                (w.makeName && corporateBrands.includes(w.makeName.toLowerCase())) || 
+                (w.familyName && (w.familyName.toLowerCase().includes('cellini') || w.familyName.toLowerCase().includes('classic')))
+            );
+        } else if (environment === 'sport') {
+            // Halı saha / Dağ bayır / Flex tayfa
+            const sportBrands = ['hublot', 'audemars piguet'];
+            watchesData = watchesData.filter(w => 
+                (w.makeName && sportBrands.includes(w.makeName.toLowerCase())) || 
+                (w.familyName && (w.familyName.toLowerCase().includes('submariner') || w.familyName.toLowerCase().includes('gmt') || w.familyName.toLowerCase().includes('aquanaut')))
+            );
+        } else if (environment === 'everyday') {
+            // Günlük casual takılmalık (Versatile)
+            const everydayBrands = ['rolex', 'grand seiko', 'omega'];
+            watchesData = watchesData.filter(w => 
+                (w.makeName && everydayBrands.includes(w.makeName.toLowerCase())) &&
+                (!w.familyName || (!w.familyName.toLowerCase().includes('cellini') && !w.familyName.toLowerCase().includes('hublot')))
+            );
+        }
+
+        // 3. Koleksiyon Durumu (İlk saatse ucuzdan pahalıya, koleksiyonsa parayı sonuna kadar göm)
+        watchesData.sort((a, b) => {
+            const priceA = parseInt(a.priceInEuro.replace(/\D/g, '')) || 0;
+            const priceB = parseInt(b.priceInEuro.replace(/\D/g, '')) || 0;
+            return stage === 'first' ? priceA - priceB : priceB - priceA;
+        });
+
+        // Sadece en iyi 3 kombini fırlatıyoruz (Gatekeeping)
+        const topMatches = watchesData.slice(0, 3);
+
+        res.render('main', {
+            results: topMatches,
+            content: 'matcher',
+            style: 'content.css'
+        });
+
+    } catch (error) {
+        console.error("--> [ALGORITMA PATLADI]:", error.message);
+        res.render('main', { results: [], content: 'matcher', style: 'content.css' });
     }
 });
 
@@ -222,226 +336,11 @@ app.get('/proxy-watch-image', async (req, res) => {
         console.error(`--> [PROXY FAILURE]: Failed to fetch image for ID ${watchId}`);
         res.redirect('https://placehold.co/400x600/141414/888888?text=Image+Not+Found');
     }
-});
+});;
 
-app.get('/uploadcheat2', async (req, res) => {
-    const games = await category.find(); // Kategori listesini çek
-    res.render('main', {
-        games, // Formdaki select için gerekli
-        content: 'upladncheat',
-        style: 'store.css'
-    });
-});
-app.get('/uploadcheat',async(req,res)=>{
-   res.render('main',{
-      content:'upload',
-      style:'store.css'
-   })
-})
-app.get('/category/:id',async(req,res)=>{
-   let id=req.params.id;
-   const cheats= await Watch.find( {brand:id})
-   res.render('main',{
-      cheats,
-      content:'game',
-      style:'store.css'
-   })
-})
-app.get('/cheats/:id',async(req,res)=>{
-   const cheatinfo= await Watch.findById(req.params.id)
-   const brand = await category.findById(cheatinfo.brand)
-   res.render('main',{
-      cheat:cheatinfo,
-      content:'cheat',brand,
-      style:'store.css'
-   })
-})
-app.get('/checkout', async (req, res) => {
-    try {
-        if (!req.query.cart) return res.status(400).send("Sepet boş veya geçersiz yönlendirme!");
-        
-        const cartArray = JSON.parse(req.query.cart); // Frontend'den gelen [{id, title, qty}] dizisi
-        const wallets = {
-            ltc: process.env.LTC_WALLET_ADDRESS,
-            usdt: process.env.USDT_WALLET_ADDRESS,
-            btc: process.env.BTC_WALLET_ADDRESS,
-            xmr: process.env.XMR_WALLET_ADDRESS
-        };
-        
-        let totalPrice = 0;
-        let verifiedItems = []; // EJS sayfasına göndereceğimiz güvenli ürün listesi
-
-        // Sepetteki her bir ürünü DB'den bul ve fiyatını hesapla
-        for (let item of cartArray) {
-            const product = await Watch.findById(item.id);
-            if (!product) continue;
-            
-            const selectedPackage = product.Price.find(p => p.PriceTitle === item.title);
-            if (selectedPackage) {
-                const itemTotal = selectedPackage.Price * item.qty;
-                totalPrice += itemTotal;
-                
-                verifiedItems.push({
-                    cheatId: product._id,
-                    cheatName: product.CheatName,
-                    packageTitle: selectedPackage.PriceTitle,
-                    price: selectedPackage.Price,
-                    qty: item.qty,
-                    itemTotal: itemTotal
-                });
-            }
-        }
-
-        if (verifiedItems.length === 0) return res.status(404).send("Geçerli hile bulunamadı!");
-
-        res.render('main', {
-            content: 'order', 
-            style: 'payment.css',
-            items: verifiedItems, // Artık EJS'ye tek ürün değil, Ürünler Dizisi yolluyoruz
-            totalPrice: totalPrice, // Sepetin Toplam Tutarı
-            wallets: wallets,
-            cartDataRaw: req.query.cart // Bunu formu postlarken kullanacağız
-        });
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).send("Ödeme sayfası yüklenirken bir hata oluştu.");
-    }
-});
-app.post('/submit-payment', validateTxid, async (req, res) => {
-    try {
-        // Formdan gizli input ile cartDataRaw'ı (JSON) çekiyoruz
-        const { cartDataRaw, txid, method, email } = req.body; 
-        if (!cartDataRaw) return res.status(400).send("Sepet verisi bulunamadı!");
-
-        const cartArray = JSON.parse(cartDataRaw);
-        
-        let totalDbPriceUSD = 0;
-        let orderItems = [];
-
-        // Güvenlik: Toplam fiyatı yine DB'den hesaplıyoruz!
-        for (let item of cartArray) {
-            const product = await Watch.findById(item.id);
-            if (!product) continue;
-            const selectedPackage = product.Price.find(p => p.PriceTitle === item.title);
-            if (selectedPackage) {
-                totalDbPriceUSD += (selectedPackage.Price * item.qty);
-                orderItems.push({
-                    cheatId: product._id,
-                    cheatName: product.CheatName,
-                    packageTitle: selectedPackage.PriceTitle,
-                    qty: item.qty,
-                    pricePaid: selectedPackage.Price
-                });
-            }
-        }
-
-        if (orderItems.length === 0) return res.status(400).send("Geçersiz paket/ürün seçimi!");
-
-        const coinGeckoMap = { ltc: 'litecoin', btc: 'bitcoin', xmr: 'monero', usdt: 'tether' };
-        const cryptoId = coinGeckoMap[method];
-        if (!cryptoId) return res.status(400).send("Desteklenmeyen ödeme yöntemi.");
-
-        const { data } = await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${cryptoId}&vs_currencies=usd`);
-        const currentCryptoPrice = data[cryptoId].usd; 
-        
-        // ÖDENMESİ GEREKEN TOPLAM KRİPTO MİKTARI
-        const expectedCryptoAmount = totalDbPriceUSD / currentCryptoPrice;
-        
-        const result = await verifyPayment(txid, method, expectedCryptoAmount);
-        if (!result.success) {
-            return res.status(400).send(`Ödeme doğrulanamadı: ${result.message}`);
-        }
-        
-        const existingOrder = await Order.findOne({ txid });
-        if (existingOrder) return res.status(400).send("Bu TXID zaten kullanılmış!");
-        
-        // SİPARİŞİ VERİTABANINA KAYDET
-        await Order.create({
-            email, 
-            items: orderItems, // !!! DİKKAT: Eski kodda tek cheatId vardı, artık ürünler dizisi var
-            totalPriceUSD: totalDbPriceUSD,
-            txid,
-            method,
-            status: 'completed'
-        });
-         res.send(`
-            <script>localStorage.removeItem('alone_cart');</script>
-            Ödemen alındı! Toplam ${orderItems.length} kalem ürün bilgileri ${email} adresine gönderilecek.
-        `);
-    } catch (error) {
-        console.error(error);
-        res.status(500).send("Bir hata oluştu.");
-    }
-});
-app.post('/add-cheat2', CheatUpload, async (req, res) => {
-    try {
-        // 1. Ana resim var mı?
-        const coverUrl = req.files['coverImage'] ? req.files['coverImage'][0].path : null;
-        const galleryUrls = req.files['otherImages'] 
-            ? req.files['otherImages'].map(f => f.path) 
-            : [];
-
-        const newWatch = new Watch({
-            name:req.body.name,
-            imageUrl: coverUrl,
-            caliber:req.body.caliber,
-            caseMaterial:req.body.caseMaterial,
-            referenceNumber:req.body.referenceNumber,     
-            aciklama:req.body.aciklama,
-            Photos: galleryUrls,  
-            brand: req.body.categoryId
-        });
-
-        await newWatch.save();
-        res.redirect('/');
-    } catch (err) {
-        res.status(500).send("Hata: " + err.message);
-    }
-});
-app.post('/add-cheat', KategoriUpload, async (req, res) => {
-    try {
-        if (!req.file) {
-            return res.status(400).send("Resim yüklenmedi!");
-        }
-        const coverUrl = req.file.path; 
-        const yenicategory = new category({
-            GameName: req.body.name,
-            GameIcon: coverUrl,      
-        });
-        await yenicategory.save();
-        res.redirect('/'); 
-      } catch (err) {
-        res.status(500).send("Yükleme hatası: " + err.message);
-    }
-});
-app.post('/cheats/add-price/:id', async (req, res) => {
-    const { PriceTitle, Stock, Price } = req.body;
-    await Watch.findByIdAndUpdate(req.params.id, {
-        $push: { Price: { PriceTitle, Stock, Price } }
-    });
-    res.redirect(`/cheats/${req.params.id}`);
-});
-
-// 2. Info Bloğu Ekleme
-app.post('/cheats/add-info/:id', async (req, res) => {
-    const { blockTitle,subTitle, items, } = req.body;
-    const itemsArray = items.split(',').map(item => item.trim());
-    
-    await Watch.findByIdAndUpdate(req.params.id, {
-        $push: { infoBlocks: { blockTitle,subTitle, items: itemsArray } }
-    });
-    res.redirect(`/cheats/${req.params.id}`);
-}); 
-app.get('/search', async (req, res) => {
-    const query = req.query.q; 
-    const results = await Watch.find({ 
-        CheatName: { $regex: query, $options: 'i' } 
-    });
-    
-    res.json(results);
-});
-const PORT = 3000;
+// Portu dinlemeye alıyoruz (Engine Start)
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Nodemon aktif: http://localhost:${PORT}/ adresine git.`);
+    console.log(`🚀 Sunucu http://localhost:${PORT} üzerinde aktif.`);
 });
+

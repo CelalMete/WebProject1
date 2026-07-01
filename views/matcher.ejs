@@ -1,0 +1,70 @@
+<div class="storeCont storeCont-locked" style="justify-content: center; align-items: center; min-height: 70vh; flex-direction: column !important;">
+    
+    <% if (!results) { %>
+        <!-- STATE 1: The Intake Form -->
+        <div class="box" style="padding: 3rem; width: 100%; max-width: 600px; text-align: center;">
+            <h2 style="margin-bottom: 1rem; color: var(--text-primary);">The Watch Matcher</h2>
+            <p style="color: var(--text-muted); margin-bottom: 2rem;">Input your parameters. Our engine will calculate your optimal references.</p>
+
+            <form action="/saatBulucu" method="GET" style="text-align: left;">
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; color: var(--text-muted); margin-bottom: 0.5rem; font-weight: 600; font-size: 0.85rem;">MAXIMUM BUDGET (€)</label>
+                    <input type="number" name="budget" required placeholder="e.g. 15000" style="width: 100%; padding: 0.8rem; background: #141414; border: 1px solid #2d2d2d; color: white; border-radius: 4px; box-sizing: border-box;">
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; color: var(--text-muted); margin-bottom: 0.5rem; font-weight: 600; font-size: 0.85rem;">PRIMARY ENVIRONMENT</label>
+                    <select name="environment" style="width: 100%; padding: 0.8rem; background: #141414; border: 1px solid #2d2d2d; color: white; border-radius: 4px; box-sizing: border-box;">
+                        <option value="corporate">Corporate / Formal (Dress Profiles)</option>
+                        <option value="sport">Active / Outdoor (Robust Tool Pieces)</option>
+                        <option value="everyday">Everyday / Office (Versatile Steel)</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 2.5rem;">
+                    <label style="display: block; color: var(--text-muted); margin-bottom: 0.5rem; font-weight: 600; font-size: 0.85rem;">COLLECTION STAGE</label>
+                    <select name="stage" style="width: 100%; padding: 0.8rem; background: #141414; border: 1px solid #2d2d2d; color: white; border-radius: 4px; box-sizing: border-box;">
+                        <option value="first">First Luxury Piece (Conservative Valuation)</option>
+                        <option value="collection">Expanding Collection (Maximize Budget)</option>
+                    </select>
+                </div>
+
+                <button type="submit" style="width: 100%; padding: 1rem; background: white; color: black; border: none; border-radius: 4px; font-weight: bold; font-size: 1rem; cursor: pointer;">Execute Algorithm</button>
+            </form>
+        </div>
+
+    <% } else { %>
+        <!-- STATE 2: The Calculated Results -->
+        <div style="text-align: center; margin-bottom: 3rem; width: 100%;">
+            <h2 style="color: var(--text-primary); margin-bottom: 0.5rem;">Curated Allocations</h2>
+            <p style="color: var(--text-muted);">Based on your strict parameters, these are your top theoretical matches.</p>
+            <a href="/saatBulucu" style="color: #ff4a4a; font-weight: 600; text-decoration: none; display: inline-block; margin-top: 1rem;">Reset Parameters</a>
+        </div>
+
+        <div class="products-grid" style="display: flex; gap: 2rem; justify-content: center; width: 100%; max-width: 1000px;">
+            <% if (results.length > 0) { %>
+                <% results.forEach(watch => { %>
+                    <div class="featured" style="width: 300px; flex: 0 0 auto;">
+                        <img src="/proxy-watch-image?watchId=<%= watch.watchId %>&imageName=<%= watch.watchImageName %>" 
+                             alt="<%= watch.makeName %>" 
+                             onerror="this.onerror=null; this.src='https://placehold.co/400x600/141414/888888?text=Image+Not+Found';">
+                        <div class="featuredInfo">
+                            <div class="namePrice">
+                                <h4 class="name"><%= watch.makeName %> <%= watch.familyName %></h4>
+                                <div class="price greentxt">€<%= watch.priceInEuro %></div>
+                            </div>
+                            <div class="subInfo">
+                                <span class="textNav"><i class="fa-solid fa-hashtag"></i> Ref: <%= watch.reference || 'Unknown' %></span>
+                            </div>
+                        </div>
+                    </div>
+                <% }) %>
+            <% } else { %>
+                <div style="text-align: center; color: var(--text-muted); width: 100%;">
+                    <p>Algorithm returned 0 matches. Your parameters are too restrictive or your budget is insufficient.</p>
+                </div>
+            <% } %>
+        </div>
+    <% } %>
+</div>
