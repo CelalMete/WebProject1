@@ -1,7 +1,6 @@
-<div class="storeCont storeCont-locked" style="justify-content: center; align-items: center; min-height: 70vh; flex-direction: column !important;">
+<div class="storeCont storeCont-locked" style="display: flex; justify-content: center; align-items: center; min-height: 70vh; flex-direction: column; width: 100%; box-sizing: border-box;">
     
     <% if (!results) { %>
-        <!-- STATE 1: The Intake Form -->
         <div class="box" style="padding: 3rem; width: 100%; max-width: 600px; text-align: center;">
             <h2 style="margin-bottom: 1rem; color: var(--text-primary);">The Watch Matcher</h2>
             <p style="color: var(--text-muted); margin-bottom: 2rem;">Input your parameters. Our engine will calculate your optimal references.</p>
@@ -35,36 +34,41 @@
         </div>
 
     <% } else { %>
-        <!-- STATE 2: The Calculated Results -->
-        <div style="text-align: center; margin-bottom: 3rem; width: 100%;">
-            <h2 style="color: var(--text-primary); margin-bottom: 0.5rem;">Curated Allocations</h2>
-            <p style="color: var(--text-muted);">Based on your strict parameters, these are your top theoretical matches.</p>
-            <a href="/saatBulucu" style="color: #ff4a4a; font-weight: 600; text-decoration: none; display: inline-block; margin-top: 1rem;">Reset Parameters</a>
-        </div>
+        <div class="allocations-wrapper" style="display: flex; flex-direction: column; align-items: center; width: 100%; padding: 2rem; box-sizing: border-box;">
+            
+            <div class="results-header" style="text-align: center; margin-bottom: 3rem;">
+                <h2 style="font-size: 2.2rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-primary);">Curated Allocations</h2>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.95rem;">Based on your strict parameters, these are your top theoretical matches.</p>
+                
+                <a href="/saatBulucu" style="display: inline-block; color: #ff4a4a; text-decoration: none; font-weight: 600; border: 1px solid #ff4a4a; padding: 0.5rem 1.5rem; border-radius: 4px; transition: all 0.2s ease;">
+                    Reset Parameters
+                </a>
+            </div>
 
-        <div class="products-grid" style="display: flex; gap: 2rem; justify-content: center; width: 100%; max-width: 1000px;">
-            <% if (results.length > 0) { %>
-                <% results.forEach(watch => { %>
-                    <div class="featured" style="width: 300px; flex: 0 0 auto;">
-                        <img src="/proxy-watch-image?watchId=<%= watch.watchId %>&imageName=<%= watch.watchImageName %>" 
-                             alt="<%= watch.makeName %>" 
-                             onerror="this.onerror=null; this.src='https://placehold.co/400x600/141414/888888?text=Image+Not+Found';">
-                        <div class="featuredInfo">
-                            <div class="namePrice">
-                                <h4 class="name"><%= watch.makeName %> <%= watch.familyName %></h4>
-                                <div class="price greentxt">€<%= watch.priceInEuro %></div>
-                            </div>
-                            <div class="subInfo">
-                                <span class="textNav"><i class="fa-solid fa-hashtag"></i> Ref: <%= watch.reference || 'Unknown' %></span>
+            <div class="products-grid" style="display: flex; justify-content: center; flex-wrap: wrap; gap: 2rem; max-width: 1200px; width: 100%;">
+                <% if (results.length > 0) { %>
+                    <% results.forEach(watch => { %>
+                        <div class="featured" style="width: 300px; flex: 0 0 auto;">
+                            <img src="/proxy-watch-image?watchId=<%= watch.watchId %>&imageName=<%= watch.watchImageName %>" 
+                                 alt="<%= watch.makeName %>" 
+                                 onerror="this.onerror=null; this.src='https://placehold.co/400x600/141414/888888?text=Image+Not+Found';">
+                            <div class="featuredInfo">
+                                <div class="namePrice">
+                                    <h4 class="name"><%= watch.makeName %> <%= watch.familyName %></h4>
+                                    <div class="price greentxt">€<%= watch.priceInEuro %></div>
+                                </div>
+                                <div class="subInfo">
+                                    <span class="textNav"><i class="fa-solid fa-hashtag"></i> Ref: <%= watch.reference || 'Unknown' %></span>
+                                </div>
                             </div>
                         </div>
+                    <% }) %>
+                <% } else { %>
+                    <div style="text-align: center; color: var(--text-muted); width: 100%;">
+                        <p>Algorithm returned 0 matches. Your parameters are too restrictive or your budget is insufficient.</p>
                     </div>
-                <% }) %>
-            <% } else { %>
-                <div style="text-align: center; color: var(--text-muted); width: 100%;">
-                    <p>Algorithm returned 0 matches. Your parameters are too restrictive or your budget is insufficient.</p>
-                </div>
-            <% } %>
+                <% } %>
+            </div>
         </div>
     <% } %>
 </div>

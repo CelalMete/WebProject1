@@ -37,85 +37,7 @@ mongoose.connect(dbURL)
   })
   .catch(err => console.error(err));
 
-const validateTxid = (req, res, next) => {
-    const { txid } = req.body;
-    const txidRegex = /^[a-fA-F0-9]{64}$/; 
-    if (!txidRegex.test(txid)) {
-        return res.status(400).send("Geçersiz TXID formatı. Lütfen kontrol edip tekrar girin.");
-    }
-    next();
-};
-async function verifyPayment(txid, method, expectedAmount) {
-    try {
-        const myAddress = config[`${method}Address`];
-        let receivedAmount = 0;
-        if (method === 'usdt') {
-            const response = await axios.get(`https://apilist.tronscanapi.com/api/transaction-info?hash=${txid}`);
-            const tx = response.data;
-            if (Object.keys(tx).length === 0 || !tx.hash) {
-                 return { success: false, message: "Böyle bir işlem (TXID) bulunamadı." };
-            }
-            if (tx.contractRet !== "SUCCESS" || !tx.confirmed) {
-                return { success: false, message: "İşlem henüz onay almadı veya başarısız. Lütfen bekleyip tekrar deneyin." };
-            }
-            if (!tx.trc20TransferInfo) {
-                 return { success: false, message: "Bu işlemde USDT transferi bulunamadı." };
-            }
-            const transfer = tx.trc20TransferInfo.find(t => t.to_address === myAddress && t.symbol === 'USDT');
-            if (!transfer) {
-                return { success: false, message: "Ödeme alıcısı eşleşmedi veya gönderilen coin USDT değil." };
-            }
-            receivedAmount = Number(transfer.amount_str) / 1000000;
 
-        } 
-        else {
-            const networkMap = { ltc: 'litecoin', btc: 'bitcoin', xmr: 'monero' };
-            const network = networkMap[method];
-            if (!network) throw new Error("Desteklenmeyen yöntem!");
-
-            const response = await axios.get(`https://api.blockchair.com/${network}/dashboards/transaction/${txid}`);
-            const tx = response.data.data[txid];
-
-            if (tx.transaction.block_id === -1 || tx.transaction.block_id === null) {
-                return { success: false, message: "İşlem henüz onay almadı. Lütfen bekleyip tekrar deneyin." };
-            }
-
-            const recipientData = tx.outputs.find(out => out.recipient === myAddress);
-            if (!recipientData) {
-                return { success: false, message: "Ödeme alıcısı eşleşmedi." };
-            }
-
-            const decimalsMap = { ltc: 100000000, btc: 100000000, xmr: 1000000000000 };
-            receivedAmount = Number(recipientData.value) / decimalsMap[method];
-        }
-        const expected = Number(expectedAmount);
-        console.log(`DEBUG -> Yöntem: ${method.toUpperCase()}, Beklenen: ${expected.toFixed(5)}, Gelen: ${receivedAmount.toFixed(5)}`);
-
-        if (isNaN(expected) || isNaN(receivedAmount) || expected <= 0) {
-            return { success: false, message: "Sistem hatası: Tutar sayısal bir değer değil!" };
-        }
-
-        const minAcceptable = expected * 0.98;
-        const maxAcceptable = expected * 1.05;
-
-        if (receivedAmount < minAcceptable || receivedAmount > maxAcceptable) {
-            return { 
-                success: false, 
-                message: `Tutar hatalı! Gereken: ${expected.toFixed(4)}, Gönderilen: ${receivedAmount.toFixed(4)}` 
-            };
-        }
-
-        return { success: true };
-
-    } catch (e) {
-        // Axios API sorgusu 404 patlarsa (Blockchair için)
-        if (e.response && e.response.status === 404) {
-             return { success: false, message: "Böyle bir işlem (TXID) bulunamadı." };
-        }
-        console.error("Doğrulama hatası:", e.message);
-        return { success: false, message: "Doğrulama sırasında ağ hatası oluştu." };
-    }
-}
 app.get('/api/search', async (req, res) => {
     try {
         const searchQuery = req.query.q || '';
@@ -312,6 +234,7 @@ app.get('/watches/:id', async (req, res) => {
         res.status(500).send("Sunucu Hatası");
     }
 });
+
 // @ts-ignore
 app.get('/saatBulucu', async (req, res) => {
     try {

@@ -21,3 +21,57 @@
 }
 .greentxt { color: var(--accent-green); }
 .mavitxt { color: var(--accent-blue); }
+
+
+/* Animasyon */
+
+/* content yüklemesinde fadein */
+.content {
+    animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* card hover scaling */
+.featured {
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), 
+                box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), 
+                border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    cursor: pointer;
+}
+
+.featured:hover {
+    transform: translateY(-4px);
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* Smooth behavior for Advanced Filters dropdown */
+details {
+    transition: all 0.3s ease-in-out;
+}
+
+details summary {
+    transition: color 0.2s ease;
+}
+
+details summary:hover {
+    color: var(--text-primary) !important;
+}
+
+/* Global Active Press Feedback */
+.navLeft a:active, 
+.input-group-locked button:active,
+.products-grid .featured:active {
+    transform: scale(0.97) !important;
+}
+
+/* Global Keyframes */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
